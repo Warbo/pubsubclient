@@ -1,0 +1,26 @@
+PubSubClient is a Python implementation of the XEP-0060 standard,
+Publish/Subscribe ("PubSub") over the XMPP messaging network.
+
+To use this library you will need the xmpppy and lxml libraries, then simply put the pubsubclient.py file in your project's directory and use "import pubsubclient". PubSubClient is designed to be self-contained as far as input and output are concerned, it only accepts and gives back regular Python types (lists, dictionaries, strings, etc.) and its own objects.
+
+To use it first make a pubsubclient.PubSubClient object, giving it a JabberID, a password and optionally a resource (default is "subscriptions", note that PubSub deals with 'bare' Jabber IDs, ie. no resources). Run the
+PubSubClient's connect method and you're ready to go.
+
+The current API is pretty awful. Every message a PubSub entity might
+want to send to a server is implemented (pretty much) in a
+PubSubClient method, but reply handlers are currently being written. There is also a partially implemented object system to make life easier. These objects are currently Node, Server, and JID although any of their methods which send XMPP stanzas need to be passed a PubSubClient to send them with.
+
+XMPP, being network based, is best implemented in an asynchronous way.
+The method used in PubSubClient is a callback system, where the
+outcome of a method is given to a callback function passed as an
+argument. For example:
+
+def print_nodes(nodes):
+	for node in nodes:
+		print node.name
+
+my_node.get_sub_nodes(my_pubsubclient, print_nodes)
+
+Here the function print_nodes will be executed when a reply to the "get_sub_nodes" request is received.
+
+Sorry for the poor documentation, but with refactoring and rewriting going on anything written would soon become obsolete. When the API stabilises there shall be some proper documentation.
