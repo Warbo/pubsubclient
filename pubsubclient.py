@@ -1045,23 +1045,20 @@ class PubSubClient(object):
 		self.send(stanza, handler, return_function)
 
 	def modify_affiliation(self, server, node, affiliations, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
-		#    <affiliations node='""" + node_name + """'/>
-		#"""
-		#		for current_affiliation in affiliations.keys():
-		#			contents = contents + "      <affiliation jid='" + current_affiliation + "' affiliation='" + affiliations[current_affiliation] + """'/>
-		#"""
-		#		contents = contents + """    </affiliations>
+		#    <affiliations node='node'/>
+		#      <affiliation jid='current_affiliation' affiliation='affiliations'/>
+		#    </affiliations>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub#owner'})
-		affiliations = SubElement(pubsub, 'affiliations', attrib={'node':str(node)})
+		affiliations_element = SubElement(pubsub, 'affiliations', attrib={'node':str(node)})
 		for current_affiliation in affiliations.keys():
-			affiliations.append(Element('affiliation', attrib={'jid':current_affiliation, 'affiliation':affiliations[current_affiliation]}))
+			affiliations_element.append(Element('affiliation', attrib={'jid':str(current_affiliation), 'affiliation':affiliations[current_affiliation]}))
 
 		def handler(stanza, callback):
 			print etree.tostring(stanza)
@@ -1442,6 +1439,9 @@ class Node(object):
 
 	def request_all_affiliated_entities(self, client, return_function=None):
 		client.request_all_affiliated_entities(self.server, self, return_function)
+
+	def modify_affiliations(self, client, affiliation_dictionary, return_function=None):
+		client.modify_affiliation(self.server, self, affiliation_dictionary, return_function)
 
 class Server(object):
 

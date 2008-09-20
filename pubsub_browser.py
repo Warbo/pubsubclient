@@ -103,7 +103,7 @@ class Window(object):
 
 		# This handles our XMPP connection. Feel free to change the JID
 		# and password
-		self.client = pubsubclient.PubSubClient("test1@localhost", "test")
+		self.client = pubsubclient.PubSubClient("test2@localhost", "test")
 
 		# Using the tree to store everything seems to have a few
 		# glitches, so we use a regular list as our definitive memory
@@ -467,9 +467,36 @@ class Window(object):
 		pass
 
 	def add_owner(self, args):
-		pass
+		self.add_owner_window = {}
+		self.add_owner_window["window"] = gtk.Window()
+		self.add_owner_window["window"].set_title("Add owner to " + str(self.tree_view.get_selected()))
+		self.add_owner_window["box"] = gtk.HBox()
+		self.add_owner_window["window"].add(self.add_owner_window["box"])
+		self.add_owner_window["jid_label"] = gtk.Label("Jabber ID:")
+		self.add_owner_window["box"].pack_start(self.add_owner_window["jid_label"], expand=False)
+		self.add_owner_window["jid_entry"] = gtk.Entry()
+		self.add_owner_window["box"].pack_start(self.add_owner_window["jid_entry"], expand=False)
+		self.add_owner_window["add_button"] = gtk.Button(stock=gtk.STOCK_ADD)
+		self.add_owner_window["add_button"].connect("released", self.add_owner_send)
+		self.add_owner_window["box"].pack_end(self.add_owner_window["add_button"], expand=False)
+		self.add_owner_window["window"].show_all()
+
+	def add_owner_send(self, args):
+		self.add_owner_window["jid"] = JID(self.add_owner_window["jid_entry"].get_text())
+		self.tree_view.get_selected().modify_affiliations(self.client, {self.add_owner_window["jid"]:"owner"}, self.owner_added)
+
+	def owner_added(self, reply):
+		if reply == 0:
+			self.properties_window["owners"].append(self.add_owner_window["jid"])
+		else:
+			print "Error"
+		self.add_owner_window["window"].destroy()
+		del self.add_owner_window
 
 	def remove_owner(self, args):
+		self.tree_view.get_selected().modify_affiliations(self.client, {self.properties_window["owners"].get_selected():"none"}, self.owner_removed)
+
+	def owner_removed(self):
 		pass
 
 	def add_publisher(self, args):
