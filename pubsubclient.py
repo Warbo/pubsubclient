@@ -1031,12 +1031,9 @@ class PubSubClient(object):
 			print etree.tostring(stanza)
 			if callback is not None:
 				affiliations = stanza.find('.//{http://jabber.org/protocol/pubsub#owner}affiliations')
-				#affiliations = stanza.find(".//affiliations")
-				print str(affiliations)
 				affiliation_dictionary = {}
 				if affiliations is not None:
 					for affiliation in affiliations:
-						print "lol"
 						if not affiliation.get("affiliation") in affiliation_dictionary.keys():
 							affiliation_dictionary[affiliation.get("affiliation")] = []
 						affiliation_dictionary[affiliation.get("affiliation")].append(JID(affiliation.get("jid")))

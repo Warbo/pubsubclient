@@ -137,7 +137,6 @@ class Window(object):
 		self.client.get_nodes(self.location_entry.get_text(), None, return_function=self.handle_incoming)
 
 	def handle_incoming(self, nodes):
-		print "function started"
 		# Go through each new node
 		for node in nodes:
 			# Assume we do not already know about this node
@@ -176,7 +175,6 @@ class Window(object):
 
 	def handle_node_creation(self, return_value):
 		if return_value == 0:
-			print "Success :)"
 			self.tree_view.get_selected().get_sub_nodes(self.client, self.handle_incoming)
 		else:
 			print return_value
@@ -238,17 +236,14 @@ class Window(object):
 		"""Request a new child node of parent. For top-level a node
 		parent should be a Server. node_type is either "leaf" or
 		"collection"."""
-		print "New node requested"
 		# This half runs if the parent is a Server
 		if type(parent) == type(pubsubclient.Server()):
 			# Request a top-level leaf node
 			if node_type == 'Leaf':
-				print "toplevel leaf requested"
 				self.client.get_new_leaf_node(parent, \
 					self.add_window["name_entry"].get_text(), None, None, return_function=self.handle_node_creation)
 			# Request a top-level collection node
 			elif node_type == 'Collection':
-				print "toplevel collection requested"
 				self.client.get_new_collection_node(parent, \
 					self.add_window["name_entry"].get_text(), None, None, return_function=self.handle_node_creation)
 
@@ -256,12 +251,10 @@ class Window(object):
 		elif type(parent) == type(pubsubclient.Node()):
 			# Request a child leaf node
 			if node_type == 'Leaf':
-				print "lowlevel leaf requested"
 				self.client.get_new_leaf_node(parent.server, \
 					self.add_window["name_entry"].get_text(), parent, None, return_function=self.handle_node_creation)
 			# Request a child collection node
 			elif node_type == 'Collection':
-				print "lowlevel collection requested"
 				self.client.get_new_collection_node(parent.server, \
 					self.add_window["name_entry"].get_text(), parent, None, return_function=self.handle_node_creation)
 
@@ -315,6 +308,11 @@ class Window(object):
 		self.properties_window["affiliations_page"] = gtk.VBox()
 		self.properties_window["affiliations_label"] = gtk.Label("Affiliations")
 		self.properties_window["notebook"].append_page(self.properties_window["affiliations_page"], tab_label=self.properties_window["affiliations_label"])
+
+		# Add a warning about affiliation status
+		self.properties_window["warning_label"] = gtk.Label("Note that a Jabber ID can only be in one state at a time. Adding a Jabber ID to a category will remove it from the others. There must always be at least one owner.")
+		self.properties_window["warning_label"].set_line_wrap(True)
+		self.properties_window["affiliations_page"].pack_start(self.properties_window["warning_label"], expand=False)
 
 		# Owners frame
 		self.properties_window["owners_frame"] = gtk.Frame("Owners")
@@ -378,87 +376,48 @@ class Window(object):
 		self.properties_window["publishers"] = ObjectList([self.properties_window["publishers_column"]])
 		self.properties_window["publishers_box"].pack_start(self.properties_window["publishers"], expand=True)
 
-		# Subscribers list
-		self.properties_window["subscribers_frame"] = gtk.Frame("Subscribers")
-		self.properties_window["affiliations_page"].pack_start(self.properties_window["subscribers_frame"], expand=True)
-		self.properties_window["subscribers_box"] = gtk.HBox()
-		self.properties_window["subscribers_frame"].add(self.properties_window["subscribers_box"])
+		# Outcasts frame
+		self.properties_window["outcasts_frame"] = gtk.Frame("Outcasts")
+		self.properties_window["affiliations_page"].pack_start(self.properties_window["outcasts_frame"], expand=True)
+		self.properties_window["outcasts_box"] = gtk.HBox()
+		self.properties_window["outcasts_frame"].add(self.properties_window["outcasts_box"])
 
-		# Add Subscriber button
-		self.properties_window["subscribers_buttons"] = gtk.VBox()
-		self.properties_window["subscribers_box"].pack_end(self.properties_window["subscribers_buttons"], expand=False)
-		self.properties_window["add_subscriber"] = gtk.Button(stock=gtk.STOCK_ADD)
+		# Add Outcast button
+		self.properties_window["outcasts_buttons"] = gtk.VBox()
+		self.properties_window["outcasts_box"].pack_end(self.properties_window["outcasts_buttons"], expand=False)
+		self.properties_window["add_outcast"] = gtk.Button(stock=gtk.STOCK_ADD)
 		try:
 			# Attempt to change the label of the stock button
-			label = self.properties_window["add_subscriber"].get_children()[0]
+			label = self.properties_window["add_outcast"].get_children()[0]
 			label = label.get_children()[0].get_children()[1]
 			label = label.set_label("Add...")
 		except:
 			# If it fails then just go back to the default
-			self.properties_window["add_subscriber"] = gtk.Button(stock=gtk.STOCK_ADD)
-		self.properties_window["add_subscriber"].connect("released", self.add_subscriber)
-		self.properties_window["subscribers_buttons"].pack_start(self.properties_window["add_subscriber"], expand=False)
+			self.properties_window["add_outcast"] = gtk.Button(stock=gtk.STOCK_ADD)
+		self.properties_window["add_outcast"].connect("released", self.add_outcast)
+		self.properties_window["outcasts_buttons"].pack_start(self.properties_window["add_outcast"], expand=False)
 
-		# Remove Subscriber button
-		self.properties_window["remove_subscriber"] = gtk.Button(stock=gtk.STOCK_REMOVE)
-		self.properties_window["remove_subscriber"].connect("released", self.remove_subscriber)
-		self.properties_window["subscribers_buttons"].pack_end(self.properties_window["remove_subscriber"], expand=False)
+		# Remove Outcast button
+		self.properties_window["remove_outcast"] = gtk.Button(stock=gtk.STOCK_REMOVE)
+		self.properties_window["remove_outcast"].connect("released", self.remove_outcast)
+		self.properties_window["outcasts_buttons"].pack_end(self.properties_window["remove_outcast"], expand=False)
 
-		# Subscribers list
-		self.properties_window["subscribers_column"] = Column(attribute="name", title="Jabber ID")
-		self.properties_window["subscribers"] = ObjectList([self.properties_window["subscribers_column"]])
-		self.properties_window["subscribers_box"].pack_start(self.properties_window["subscribers"], expand=True)
-
-		# Banned frame
-		self.properties_window["banned_frame"] = gtk.Frame("Banned")
-		self.properties_window["affiliations_page"].pack_start(self.properties_window["banned_frame"], expand=True)
-		self.properties_window["banned_box"] = gtk.HBox()
-		self.properties_window["banned_frame"].add(self.properties_window["banned_box"])
-
-		# Add Banned button
-		self.properties_window["banned_buttons"] = gtk.VBox()
-		self.properties_window["banned_box"].pack_end(self.properties_window["banned_buttons"], expand=False)
-		self.properties_window["add_banned"] = gtk.Button(stock=gtk.STOCK_ADD)
-		try:
-			# Attempt to change the label of the stock button
-			label = self.properties_window["add_banned"].get_children()[0]
-			label = label.get_children()[0].get_children()[1]
-			label = label.set_label("Add...")
-		except:
-			# If it fails then just go back to the default
-			self.properties_window["add_banned"] = gtk.Button(stock=gtk.STOCK_ADD)
-		self.properties_window["add_banned"].connect("released", self.add_banned)
-		self.properties_window["banned_buttons"].pack_start(self.properties_window["add_banned"], expand=False)
-
-		# Remove Banned button
-		self.properties_window["remove_banned"] = gtk.Button(stock=gtk.STOCK_REMOVE)
-		self.properties_window["remove_banned"].connect("released", self.remove_banned)
-		self.properties_window["banned_buttons"].pack_end(self.properties_window["remove_banned"], expand=False)
-
-		# Banned list
-		self.properties_window["banned_column"] = Column(attribute="name", title="Jabber ID")
-		self.properties_window["banned"] = ObjectList([self.properties_window["banned_column"]])
-		self.properties_window["banned_box"].pack_start(self.properties_window["banned"], expand=True)
+		# Outcasts list
+		self.properties_window["outcasts_column"] = Column(attribute="name", title="Jabber ID")
+		self.properties_window["outcasts"] = ObjectList([self.properties_window["outcasts_column"]])
+		self.properties_window["outcasts_box"].pack_start(self.properties_window["outcasts"], expand=True)
 
 		self.properties_window["window"].show_all()
 
-		print ""
-		print str(affiliation_dictionary.keys())
-		print ""
-
 		if "owner" in affiliation_dictionary.keys():
-			print 'owner found'
 			for jid in affiliation_dictionary["owner"]:
 				self.properties_window["owners"].append(jid)
 		if "publisher" in affiliation_dictionary.keys():
 			for jid in affiliation_dictionary["publisher"]:
 				self.properties_window["publishers"].append(jid)
-		if "subscriber" in affiliation_dictionary.keys():
-			for jid in affiliation_dictionary["subscriber"]:
-				self.properties_window["subscribers"].append(jid)
-		if "banned" in affiliation_dictionary.keys():
-			for jid in affiliation_dictionary["banned"]:
-				self.properties_window["banned"].append(jid)
+		if "outcast" in affiliation_dictionary.keys():
+			for jid in affiliation_dictionary["outcast"]:
+				self.properties_window["outcasts"].append(jid)
 
 	def set_name(self, args):
 		pass
@@ -488,6 +447,12 @@ class Window(object):
 	def owner_added(self, reply):
 		if reply == 0:
 			self.properties_window["owners"].append(self.add_owner_window["jid"])
+			for jid in self.properties_window["publishers"]:
+				if str(jid) == str(self.add_owner_window["jid"]):
+					self.properties_window["publishers"].remove(jid)
+			for jid in self.properties_window["outcasts"]:
+				if str(jid) == str(self.add_owner_window["jid"]):
+					self.properties_window["outcasts"].remove(jid)
 		else:
 			print "Error"
 		self.add_owner_window["window"].destroy()
@@ -503,22 +468,88 @@ class Window(object):
 			print "Error"
 
 	def add_publisher(self, args):
-		pass
+		self.add_publisher_window = {}
+		self.add_publisher_window["window"] = gtk.Window()
+		self.add_publisher_window["window"].set_title("Add publisher to " + str(self.tree_view.get_selected()))
+		self.add_publisher_window["hbox"] = gtk.HBox()
+		self.add_publisher_window["window"].add(self.add_publisher_window["hbox"])
+		self.add_publisher_window["jid_label"] = gtk.Label("Jabber ID:")
+		self.add_publisher_window["hbox"].pack_start(self.add_publisher_window["jid_label"], expand=False)
+		self.add_publisher_window["jid_entry"] = gtk.Entry()
+		self.add_publisher_window["hbox"].pack_start(self.add_publisher_window["jid_entry"], expand=False)
+		self.add_publisher_window["add_button"] = gtk.Button(stock=gtk.STOCK_ADD)
+		self.add_publisher_window["add_button"].connect("released", self.add_publisher_send)
+		self.add_publisher_window["hbox"].pack_end(self.add_publisher_window["add_button"], expand=False)
+		self.add_publisher_window["window"].show_all()
+
+	def add_publisher_send(self, args):
+		self.add_publisher_window["jid"] = JID(self.add_publisher_window["jid_entry"].get_text())
+		self.tree_view.get_selected().modify_affiliations(self.client, {self.add_publisher_window["jid"]:"publisher"}, self.publisher_added)
+
+	def publisher_added(self, reply):
+		if reply == 0:
+			self.properties_window["publishers"].append(self.add_publisher_window["jid"])
+			for jid in self.properties_window["owners"]:
+				if str(jid) == str(self.add_publisher_window["jid"]):
+					self.properties_window["owners"].remove(jid)
+			for jid in self.properties_window["outcasts"]:
+				if str(jid) == str(self.add_publisher_window["jid"]):
+					self.properties_window["outcasts"].remove(jid)
+		else:
+			print "Error"
+		self.add_publisher_window["window"].destroy()
+		del self.add_publisher_window
 
 	def remove_publisher(self, args):
-		pass
+		self.tree_view.get_selected().modify_affiliations(self.client, {self.properties_window["publishers"].get_selected():"none"}, self.publisher_removed)
 
-	def add_subscriber(self, args):
-		pass
+	def publisher_removed(self, reply):
+		if reply == 0:
+			self.properties_window["publishers"].remove(self.properties_window["publishers"].get_selected())
+		else:
+			print "Error"
 
-	def remove_subscriber(self, args):
-		pass
+	def add_outcast(self, args):
+		self.add_outcast_window = {}
+		self.add_outcast_window["window"] = gtk.Window()
+		self.add_outcast_window["window"].set_title("Add outcast to " + str(self.tree_view.get_selected()))
+		self.add_outcast_window["hbox"] = gtk.HBox()
+		self.add_outcast_window["window"].add(self.add_outcast_window["hbox"])
+		self.add_outcast_window["jid_label"] = gtk.Label("Jabber ID:")
+		self.add_outcast_window["hbox"].pack_start(self.add_outcast_window["jid_label"], expand=False)
+		self.add_outcast_window["jid_entry"] = gtk.Entry()
+		self.add_outcast_window["hbox"].pack_start(self.add_outcast_window["jid_entry"], expand=False)
+		self.add_outcast_window["add_button"] = gtk.Button(stock=gtk.STOCK_ADD)
+		self.add_outcast_window["add_button"].connect("released", self.add_outcast_send)
+		self.add_outcast_window["hbox"].pack_end(self.add_outcast_window["add_button"], expand=False)
+		self.add_outcast_window["window"].show_all()
 
-	def add_banned(self, args):
-		pass
+	def add_outcast_send(self, args):
+		self.add_outcast_window["jid"] = JID(self.add_outcast_window["jid_entry"].get_text())
+		self.tree_view.get_selected().modify_affiliations(self.client, {self.add_outcast_window["jid"]:"outcast"}, self.outcast_added)
 
-	def remove_banned(self, args):
-		pass
+	def outcast_added(self, reply):
+		if reply == 0:
+			self.properties_window["outcasts"].append(self.add_outcast_window["jid"])
+			for jid in self.properties_window["publishers"]:
+				if str(jid) == str(self.add_outcast_window["jid"]):
+					self.properties_window["publishers"].remove(jid)
+			for jid in self.properties_window["owners"]:
+				if str(jid) == str(self.add_outcast_window["jid"]):
+					self.properties_window["owners"].remove(jid)
+		else:
+			print "Error"
+		self.add_outcast_window["window"].destroy()
+		del self.add_outcast_window
+
+	def remove_outcast(self, args):
+		self.tree_view.get_selected().modify_affiliations(self.client, {self.properties_window["outcasts"].get_selected():"none"}, self.outcast_removed)
+
+	def outcast_removed(self, reply):
+		if reply == 0:
+			self.properties_window["outcasts"].remove(self.properties_window["outcasts"].get_selected())
+		else:
+			print "Error"
 
 	def main(self):
 		self.window.show_all()
