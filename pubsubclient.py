@@ -1445,6 +1445,9 @@ class Node(object):
 	def modify_affiliations(self, client, affiliation_dictionary, return_function=None):
 		client.modify_affiliation(self.server, self, affiliation_dictionary, return_function)
 
+	def get_information(self, client, return_function=None):
+		client.get_node_information(self.server, self, return_function)
+
 class Server(object):
 
 	def __init__(self, name=None):

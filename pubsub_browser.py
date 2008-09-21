@@ -259,10 +259,6 @@ class Window(object):
 					self.add_window["name_entry"].get_text(), parent, None, return_function=self.handle_node_creation)
 
 	def properties_button_released(self, args):
-		node = self.tree_view.get_selected()
-		node.request_all_affiliated_entities(self.client, return_function=self.properties_received)
-
-	def properties_received(self, affiliation_dictionary):
 		## FIXME: This should allow multiple properties windows to be open at once
 		# Setup a window containing a notebook
 		self.properties_window = {}
@@ -278,6 +274,16 @@ class Window(object):
 		self.properties_window["metadata_label"] = gtk.Label("Metadata")
 		self.properties_window["notebook"].append_page(self.properties_window["metadata_page"], tab_label=self.properties_window["metadata_label"])
 
+		# Add the Affiliations page
+		self.properties_window["affiliations_page"] = gtk.VBox()
+		self.properties_window["affiliations_label"] = gtk.Label("Affiliations")
+		self.properties_window["notebook"].append_page(self.properties_window["affiliations_page"], tab_label=self.properties_window["affiliations_label"])
+
+		node = self.tree_view.get_selected()
+		node.get_information(self.client, self.information_received)
+		node.request_all_affiliated_entities(self.client, return_function=self.properties_received)
+
+	def information_received(self, info_dict):
 		# Generate the contents of the Metadata page
 		## FIXME: It would be awesome if this were generated automatically from what is found :)
 		# The Name entry
@@ -304,11 +310,7 @@ class Window(object):
 		self.properties_window["title_set"].connect("released", self.set_title)
 		self.properties_window["title_box"].pack_end(self.properties_window["title_set"], expand=False)
 
-		# Add the Affiliations page
-		self.properties_window["affiliations_page"] = gtk.VBox()
-		self.properties_window["affiliations_label"] = gtk.Label("Affiliations")
-		self.properties_window["notebook"].append_page(self.properties_window["affiliations_page"], tab_label=self.properties_window["affiliations_label"])
-
+	def properties_received(self, affiliation_dictionary):
 		# Add a warning about affiliation status
 		self.properties_window["warning_label"] = gtk.Label("Note that a Jabber ID can only be in one state at a time. Adding a Jabber ID to a category will remove it from the others. There must always be at least one owner.")
 		self.properties_window["warning_label"].set_line_wrap(True)
