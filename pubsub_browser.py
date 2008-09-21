@@ -103,7 +103,7 @@ class Window(object):
 
 		# This handles our XMPP connection. Feel free to change the JID
 		# and password
-		self.client = pubsubclient.PubSubClient("test2@localhost", "test")
+		self.client = pubsubclient.PubSubClient("test1@localhost", "test")
 
 		# Using the tree to store everything seems to have a few
 		# glitches, so we use a regular list as our definitive memory
@@ -177,7 +177,7 @@ class Window(object):
 	def handle_node_creation(self, return_value):
 		if return_value == 0:
 			print "Success :)"
-			self.client.get_nodes(self.location_entry.get_text(), None, return_function=self.handle_incoming)
+			self.tree_view.get_selected().get_sub_nodes(self.client, self.handle_incoming)
 		else:
 			print return_value
 
@@ -496,8 +496,11 @@ class Window(object):
 	def remove_owner(self, args):
 		self.tree_view.get_selected().modify_affiliations(self.client, {self.properties_window["owners"].get_selected():"none"}, self.owner_removed)
 
-	def owner_removed(self):
-		pass
+	def owner_removed(self, reply):
+		if reply == 0:
+			self.properties_window["owners"].remove(self.properties_window["owners"].get_selected())
+		else:
+			print "Error"
 
 	def add_publisher(self, args):
 		pass

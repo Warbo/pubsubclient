@@ -1062,6 +1062,11 @@ class PubSubClient(object):
 
 		def handler(stanza, callback):
 			print etree.tostring(stanza)
+			if callback is not None:
+				if stanza.get("type") == "result":
+					callback(0)
+				else:
+					callback("error")
 
 		self.send(stanza, handler, return_function)
 
