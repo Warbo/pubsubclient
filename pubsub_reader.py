@@ -11,7 +11,7 @@ from lxml.etree import ElementTree, Element, SubElement
 import pygtk
 import gtk
 import gobject
-import webkit
+#import webkit
 import feedparser
 from StringIO import StringIO
 from kiwi.ui.objectlist import Column, ObjectTree, ObjectList
@@ -69,8 +69,8 @@ class Display:
 		self.right_vpaned.pack1(self.entry_list)
 
 		self.webscroll = gtk.ScrolledWindow()
-		self.webview = webkit.WebView()
-		self.webscroll.add(self.webview)
+		#self.webview = webkit.WebView()
+		#self.webscroll.add(self.webview)
 		self.right_vpaned.pack2(self.webscroll)
 
 		self.window.show_all()
@@ -80,8 +80,8 @@ class Display:
 
 	def subscribe_to_node(self, args):
 		#self.pubsub_client
-		selected = self.add_window['node_list'].get_selected()
-		self.client.subscribe_to_a_node(self.add_window['location_entry'].get_text(), selected.node, return_function=self.subscription_finished)
+		self.add_window['node_list'].get_selected().subscribe(self.client, self.jid)
+		#self.client.subscribe_to_a_node(self.add_window['location_entry'].get_text(), selected.node, return_function=self.subscription_finished)
 
 	def subscription_finished(self, reply):
 		print 'Reply received"'
@@ -136,7 +136,7 @@ class Display:
 		self.add_window['bottom_hbox'].pack_end(self.add_window['add_button'], expand=False)
 
 		self.add_window['name_column'] = Column('name', 'Name')
-		self.add_window['location_column'] = Column('node', 'Location')
+		self.add_window['location_column'] = Column('name', 'Location')
 		self.add_window['name_column'].expand = True
 		self.add_window['location_column'].expand = True
 		self.add_window['node_list'] = ObjectList([self.add_window['name_column'], self.add_window['location_column']])
@@ -150,7 +150,9 @@ class Display:
 		return self.finding
 
 	def find_new_nodes(self, arg):
-		self.client.entity_discover_nodes(self.add_window['location_entry'].get_text(), return_function=self.found_new_nodes)
+		self.add_window["entered_server"] = pubsubclient.Server(name=self.add_window['location_entry'].get_text())
+		self.client.get_nodes(self.add_window["entered_server"], None, return_function=self.found_new_nodes)
+		#self.client.entity_discover_nodes(self.add_window['location_entry'].get_text(), return_function=self.found_new_nodes)
 		self.finding = True
 		gobject.idle_add(self.pulse_find_progress)
 
@@ -158,13 +160,14 @@ class Display:
 		"""The program waits until this is run. Could be more elegant
 		using a signal though"""
 		self.finding = False
-		if reply.find('error') is not None:
+		if reply == "error":
 			self.add_window['find_progress'].set_fraction(0.0)
 			self.add_window['find_progress'].set_text('Error finding nodes at ' + self.add_window['location_entry'].get_text())
-		elif reply.find('result') is not None:
-			for item in reply.xpath(".//item"):
-				self.add_window['node_list'].append(FoundRow(item.get('name'), item.get('node')))
-				self.client.entity_discover_secondary_nodes('pubsub.localhost', item.get('node'), self.found_new_nodes)
+		else:
+			for node in reply:
+				self.add_window['node_list'].append(node)
+				#self.client.entity_discover_secondary_nodes(self.add_window["entered_server"], node, self.found_new_nodes)
+				node.get_sub_nodes(self.client, self.found_new_nodes)
 				self.finding = True
 
 		self.add_window['window'].show_all()
@@ -178,27 +181,28 @@ class Display:
 		gobject.idle_add(self.idle_process)
 
 	def handle_incoming(self, stanza):
-		os.popen("mkdir -p pages/")
-		while True:
-			filename = ''.join(Random().sample(string.letters+string.digits, 16))
-			if filename not in os.listdir("pages"): break
-		page_file = open("pages/" + filename, 'w')
-		page = Element('html')
-		head = SubElement(page, 'head')
-		css_link = SubElement(head, 'link', attrib={"rel":"stylesheet", "type":"text/css", "href":os.getcwd() + "/page_settings/test1/item.css"})
-		body = SubElement(page, 'body')
-		wholediv = SubElement(body, 'div', attrib={'class':'whole'})
-		titlediv = SubElement(wholediv, 'div', attrib={"class":"title"})
-		maindiv = SubElement(wholediv, 'div', attrib={"class":"main"})
-		for event in stanza.xpath("//e:event", namespaces={"e":"http://jabber.org/protocol/pubsub#event"}):
-			for item_node in event.xpath("//i:items", namespaces={"i":"http://jabber.org/protocol/pubsub#event"}):
-				title = SubElement(titlediv, 'a')
-				title.text = "TITLE: " + item_node.get("node")
-				body_text = SubElement(maindiv, 'a')
-				body_text.text = "MAIN: " + item_node.get("node")
-		page_file.write(etree.tostring(page))
-		page_file.close()
-		self.webview.open(os.getcwd() + "/pages/" + filename)
+		#os.popen("mkdir -p pages/")
+		#while True:
+		#	filename = ''.join(Random().sample(string.letters+string.digits, 16))
+		#	if filename not in os.listdir("pages"): break
+		#page_file = open("pages/" + filename, 'w')
+		#page = Element('html')
+		#head = SubElement(page, 'head')
+		#css_link = SubElement(head, 'link', attrib={"rel":"stylesheet", "type":"text/css", "href":os.getcwd() + "/page_settings/test1/item.css"})
+		#body = SubElement(page, 'body')
+		#wholediv = SubElement(body, 'div', attrib={'class':'whole'})
+		#titlediv = SubElement(wholediv, 'div', attrib={"class":"title"})
+		#maindiv = SubElement(wholediv, 'div', attrib={"class":"main"})
+		#for event in stanza.xpath("//e:event", namespaces={"e":"http://jabber.org/protocol/pubsub#event"}):
+		#	for item_node in event.xpath("//i:items", namespaces={"i":"http://jabber.org/protocol/pubsub#event"}):
+		#		title = SubElement(titlediv, 'a')
+		#		title.text = "TITLE: " + item_node.get("node")
+		#		body_text = SubElement(maindiv, 'a')
+		#		body_text.text = "MAIN: " + item_node.get("node")
+		#page_file.write(etree.tostring(page))
+		#page_file.close()
+		#self.webview.open(os.getcwd() + "/pages/" + filename)
+		pass
 
 	def process(self):
 		"""Handle any pending XMPP events."""
@@ -221,7 +225,7 @@ class Display:
 
 if __name__ == '__main__':
 	display = Display()
-	display.webview.open(os.getcwd() + "/start.html")
+	#display.webview.open(os.getcwd() + "/start.html")
 	display.connect()
 	#display.client.subscribe_to_a_node('pubsub.localhost', '/home')
 	#display.populate('pubsub.localhost')

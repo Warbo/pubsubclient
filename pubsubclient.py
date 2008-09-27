@@ -250,6 +250,7 @@ class PubSubClient(object):
 					# FIXME: Make this handle errors in a meaningful way
 					#error = SubElement(reply, 'error')
 					print "Error"
+					callback("error")
 				elif stanza.attrib.get('type') == 'result':
 					# This is run if the request has been successful
 					if stanza.find('.//{http://jabber.org/protocol/disco#items}query').get('node') is not None:
@@ -538,35 +539,18 @@ class PubSubClient(object):
 		self.request_items_generic(server, node, None, item_count, return_function, stanza_id)
 
 	def publish(self, server, node, body, item_id=None, jid=None, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid(jid) + """'
-		#    to='""" + server + """'>
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <publish node='""" + node_name + """'>
-		#      <item"""
-		#		if item_id is not None:
-		#			contents = contents + " id='ae890ac52d0df67ed7cfdf51b644e901'"
-		#		contents = contents + """>
-		#"""
-		#		contents = contents + body
-		#		contents = contents + """
+		#    <publish node='node'>
+		#      <item id='item_id'>
+		#.........body.............
 		#        </entry>
 		#      </item>
 		#    </publish>
 		#  </pubsub>
-		#</iq>"""
-		#stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
-		#pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
-		#publish = SubElement(pubsub, 'publish', attrib={'node':node_name})
-		#item = SubElement(publish, 'item')
-		#if item_id is not None:
-		#	item.set('id', item_id)
-		#item.append(body)
-
-		#def handler(stanza):
-		#	pass
-
-		#self.send(stanza, handler)
+		#</iq>
 
 		self.publish_with_options(server, node, body, None, item_id, jid, return_function, stanza_id)
 
@@ -595,16 +579,33 @@ class PubSubClient(object):
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		publish = SubElement(pubsub, 'publish', attrib={'node':str(node)})
-		item = item = SubElement(publish, 'item')
+		item = SubElement(publish, 'item')
 		if item_id is not None:
 			item.set('id', item_id)
-		item.append(body)
+		if type(body) == type(Element):
+			item.append(body)
+		elif type(body) == type("string"):
+			item.text = body
 		if options is not None:
 			publish_options = SubElement(pubsub, 'publish-options')
 			publish_options.append(options)
 
 		def handler(stanza, callback):
+			#<iq type='result'
+			#    from='pubsub.shakespeare.lit'
+			#    to='hamlet@denmark.lit/blogbot'
+			#    id='publish1'>
+			#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			#    <publish node='princely_musings'>
+			#      <item id='ae890ac52d0df67ed7cfdf51b644e901'/>
+			#    </publish>
+			#  </pubsub>
 			print etree.tostring(stanza)
+			if callback is not None:
+				if stanza.get("type") == "result":
+					callback(0)
+				else:
+					callback(stanza)
 
 		self.send(stanza, handler, return_function)
 
@@ -1405,7 +1406,12 @@ class Node(object):
 		return self.name
 
 	def set_server(self, server):
-		self.server = server
+		if type(server) == type("string"):
+			self.server = Server(server)
+		elif type(server) == type(Server()):
+			self.server = server
+		else:
+			print "Error: server must be a string or a Server."
 
 	def set_name(self, name):
 		self.name = name
@@ -1447,6 +1453,12 @@ class Node(object):
 
 	def get_information(self, client, return_function=None):
 		client.get_node_information(self.server, self, return_function)
+
+	def publish(self, client, body, id=None, return_function=None):
+		client.publish(self.server, self, body, id, None, return_function)
+
+	def subscribe(self, client, jid, return_function=None):
+		pass
 
 class Server(object):
 
