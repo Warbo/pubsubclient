@@ -39,7 +39,7 @@ class PubSubClient(object):
 		password and resource are strings."""
 		# Store all of the information we need to connect to Jabber
 		# The user and server can be deduced from the JabberID
-		# FIXME: This is probably really insecure password storage
+		# FIXME: This is probably really insecure password storage?
 		self.password = password
 		self.resource = resource
 		if type(jid) == type("string"):
@@ -60,7 +60,7 @@ class PubSubClient(object):
 		self.pending = {}
 
 		# self.callbacks works in a similar way to self.pending, except
-		# that it maps stanza ids to functions given by the program
+		# that it maps stanza ids to functions given by the programmer
 		# using the library. These functions are passed to the
 		# appropriate handler function from self.pending, and are
 		# executed by those functions when they have finished
@@ -123,7 +123,6 @@ class PubSubClient(object):
 		assigned to handle messages."""
 		## FIXME: Doesn't do anything at the moment
 		print message.__str__(1)
-		#print str(message)
 		message = ElementTree(file=StringIO(message))
 		message_root = message.getroot()
 		self.message_handler_function(message_root)
@@ -142,12 +141,15 @@ class PubSubClient(object):
 			# This stanza must be a reply, therefore run the function
 			# which is assigned to handle it
 			self.pending[stanza_root.get('id')][0](stanza_root, self.callbacks[stanza_root.get('id')][0])
+			# These won't be run again, so collect the garbage
+			del(self.pending[stanza_root.get('id')])
+			del(self.callbacks[stanza_root.get('id')])
 
 	def send(self, stanza, reply_handler=None, callback=None):
 		"""Sends the given stanza through the connection, giving it a
 		random stanza id if it doesn't have one or if the current one
-		is not unique. Also assigns the optional function
-		'reply_handler' to handle replies to this stanza."""
+		is not unique. Also assigns the optional functions
+		'reply_handler' and 'callback' to handle replies to this stanza."""
 		# Get the id of this stanza if it has one,
 		# or else make a new random one
 		if 'id' in stanza.attrib.keys() and stanza.get('id') not in self.used_ids:
@@ -180,27 +182,27 @@ class PubSubClient(object):
 		# stanza argument is the reply stanza which has been received
 		def handler(stanza, to_run):
 			## FIXME: This handles <feature> but not <identity>
-			# See if the server is not in our server_properties tree
-			reply = Element('reply', attrib={'id':stanza.get('id')})
-			# If this is an error report then say so
-			if stanza.attrib.get('type') == 'error':
-				error = SubElement(reply, 'error')
-			# If this is a successful reply then handle it
-			elif stanza.attrib.get('type') == 'result':
-				result = SubElement(reply, 'result')
-				server = SubElement(result, 'server', attrib={'url':stanza.get('from')})
-				features = SubElement(server, 'features')
-				for query in stanza.xpath(".//{http://jabber.org/protocol/disco#info}query"):
-					for identity in query.xpath("{http://jabber.org/protocol/disco#info}identity"):
-						# Handle identity children
-						## FIXME: Doesn't do anything yet
-						pass
-					for feature in query.xpath("{http://jabber.org/protocol/disco#info}feature"):
-						# Handle feature children, adding features to
-						# the server's entry in server_properties
-						features.append(Element('feature', attrib={'var':feature.get('var')}))
 			if to_run is not None:
-				to_run(reply)
+				# See if the server is not in our server_properties tree
+				reply = Element('reply', attrib={'id':stanza.get('id')})
+				# If this is an error report then say so
+				if stanza.attrib.get('type') == 'error':
+					error = SubElement(reply, 'error')
+				# If this is a successful reply then handle it
+				elif stanza.attrib.get('type') == 'result':
+					result = SubElement(reply, 'result')
+					server = SubElement(result, 'server', attrib={'url':stanza.get('from')})
+					features = SubElement(server, 'features')
+					for query in stanza.xpath(".//{http://jabber.org/protocol/disco#info}query"):
+						for identity in query.xpath("{http://jabber.org/protocol/disco#info}identity"):
+							# Handle identity children
+							## FIXME: Doesn't do anything yet
+							pass
+						for feature in query.xpath("{http://jabber.org/protocol/disco#info}feature"):
+							# Handle feature children, adding features to
+							# the server's entry in server_properties
+							features.append(Element('feature', attrib={'var':feature.get('var')}))
+					to_run(reply)
 
 		# Send the message and set the handler function above to deal with the reply
 		self.send(contents, handler, return_function)
@@ -1458,7 +1460,7 @@ class Node(object):
 		client.publish(self.server, self, body, id, None, return_function)
 
 	def subscribe(self, client, jid, return_function=None):
-		pass
+		client.subscribe(self.server, self, jid, return_function)
 
 class Server(object):
 

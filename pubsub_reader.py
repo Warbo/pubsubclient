@@ -80,7 +80,7 @@ class Display:
 
 	def subscribe_to_node(self, args):
 		#self.pubsub_client
-		self.add_window['node_list'].get_selected().subscribe(self.client, self.jid)
+		self.add_window['node_list'].get_selected().subscribe(self.client, self.jid, return_function=self.subscription_finished)
 		#self.client.subscribe_to_a_node(self.add_window['location_entry'].get_text(), selected.node, return_function=self.subscription_finished)
 
 	def subscription_finished(self, reply):

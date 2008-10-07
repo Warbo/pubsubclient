@@ -39,14 +39,18 @@ class Writer:
 
 	def main(self):
 		self.window.show_all()
+		gobject.timeout_add(250, self.client.process)
 		gtk.main()
 
 	def publish(self, args):
 		text = self.entry_box.get_buffer().get_text(self.entry_box.get_buffer().get_start_iter(), self.entry_box.get_buffer().get_end_iter())
 		valid_text = simplexml.XMLescape(text)
-		self.node.publish(self.client, valid_text, return_function=self.published)
+		all_text = "<item>" + valid_text + "</item>"
+		print str(valid_text)
+		self.node.publish(self.client, all_text, return_function=self.published)
 
 	def published(self, reply):
+		print "Reply received"
 		if reply == 0:
 			print "Success!"
 		else:
