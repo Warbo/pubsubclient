@@ -609,6 +609,7 @@ class PubSubClient(object):
 				else:
 					callback(stanza)
 
+		print "Sending"
 		self.send(stanza, handler, return_function)
 
 	def delete_an_item_from_a_node(self, server, node, item_id, jid=None, return_function=None, stanza_id=None):

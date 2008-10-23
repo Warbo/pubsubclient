@@ -18,11 +18,18 @@ from kiwi.ui.objectlist import Column, ObjectTree, ObjectList
 class Writer:
 
 	def __init__(self, node):
+		"""Make a Writer object, which is the application. A Writer
+		contains an application window and a PubSubClient."""
+		# This is the JID to use. Currently hard-coded
 		self.client = PubSubClient("test1@localhost", "test")
+
+		# Launch the connection
 		self.client.connect()
 
+		# The node we are going to publish to
 		self.node = node
 
+		# Make the application window
 		self.window = gtk.Window()
 		self.window.set_title("PubSub Writer")
 		self.window.connect("destroy", self.destroy)
@@ -35,9 +42,11 @@ class Writer:
 		self.vbox.pack_start(self.entry_box)
 
 	def destroy(self, args):
+		"""Quit the application when the window is closed."""
 		gtk.main_quit()
 
 	def main(self):
+		"""The main loop for the application."""
 		self.window.show_all()
 		gobject.timeout_add(250, self.client.process)
 		gtk.main()

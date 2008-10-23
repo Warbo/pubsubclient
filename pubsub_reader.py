@@ -11,7 +11,7 @@ from lxml.etree import ElementTree, Element, SubElement
 import pygtk
 import gtk
 import gobject
-#import webkit
+import webkit
 import feedparser
 from StringIO import StringIO
 from kiwi.ui.objectlist import Column, ObjectTree, ObjectList
@@ -69,8 +69,8 @@ class Display:
 		self.right_vpaned.pack1(self.entry_list)
 
 		self.webscroll = gtk.ScrolledWindow()
-		#self.webview = webkit.WebView()
-		#self.webscroll.add(self.webview)
+		self.webview = webkit.WebView()
+		self.webscroll.add(self.webview)
 		self.right_vpaned.pack2(self.webscroll)
 
 		self.window.show_all()
@@ -79,9 +79,7 @@ class Display:
 		self.add_window['add_button'].set_sensitive(False)
 
 	def subscribe_to_node(self, args):
-		#self.pubsub_client
 		self.add_window['node_list'].get_selected().subscribe(self.client, self.jid, return_function=self.subscription_finished)
-		#self.client.subscribe_to_a_node(self.add_window['location_entry'].get_text(), selected.node, return_function=self.subscription_finished)
 
 	def subscription_finished(self, reply):
 		print 'Reply received"'
@@ -129,8 +127,7 @@ class Display:
 		self.add_window['add_button'] = gtk.Button(label="Subscribe", stock=gtk.STOCK_ADD)
 		self.add_window['add_button'].set_label("Subscribe")
 		## FIXME: The Subscribe button should be insensitive to start
-		## with, then activate when a node is selected. Need Kiwi docs
-		## to do this
+		## with, then activate when a node is selected.
 		#self.add_window['add_button'].set_sensitive(False)
 		self.add_window['add_button'].connect("released", self.subscribe_to_node)
 		self.add_window['bottom_hbox'].pack_end(self.add_window['add_button'], expand=False)
@@ -152,7 +149,6 @@ class Display:
 	def find_new_nodes(self, arg):
 		self.add_window["entered_server"] = pubsubclient.Server(name=self.add_window['location_entry'].get_text())
 		self.client.get_nodes(self.add_window["entered_server"], None, return_function=self.found_new_nodes)
-		#self.client.entity_discover_nodes(self.add_window['location_entry'].get_text(), return_function=self.found_new_nodes)
 		self.finding = True
 		gobject.idle_add(self.pulse_find_progress)
 
@@ -166,7 +162,6 @@ class Display:
 		else:
 			for node in reply:
 				self.add_window['node_list'].append(node)
-				#self.client.entity_discover_secondary_nodes(self.add_window["entered_server"], node, self.found_new_nodes)
 				node.get_sub_nodes(self.client, self.found_new_nodes)
 				self.finding = True
 
@@ -225,8 +220,8 @@ class Display:
 
 if __name__ == '__main__':
 	display = Display()
-	#display.webview.open(os.getcwd() + "/start.html")
+	display.webview.open(os.getcwd() + "/start.html")
 	display.connect()
-	#display.client.subscribe_to_a_node('pubsub.localhost', '/home')
-	#display.populate('pubsub.localhost')
+	display.client.subscribe_to_a_node('pubsub.localhost', '/home')
+	display.populate('pubsub.localhost')
 	display.main()
