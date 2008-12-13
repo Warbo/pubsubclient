@@ -277,6 +277,7 @@ class PubSubClient(object):
 		stanza.append(Element('query', attrib={'xmlns':'http://jabber.org/protocol/disco#info', 'node':str(node)}))
 
 		def handler(stanza, callback):
+			#print etree.tostring(stanza)
 			## FIXME: Much more information available
 			if callback is not None:
 				#<iq type='result'
@@ -290,18 +291,20 @@ class PubSubClient(object):
 				#    ...
 				#  </query>
 				#</iq>
-				if stanza.get('type') == 'result':
-					node = Node(server=stanza.get('from'), name=stanza.find('{http://jabber.org/protocol/disco#info}query').get('node'))
-					#for element in stanza.xpath("//query"):
-					for element in stanza.find("{http://jabber.org/protocol/disco#info}query"):
-						try:
-							if element.get('type') == 'collection':
-								node.set_type('collection')
-							elif element.get('type') == 'leaf':
-								node.set_type('leaf')
-						except:
-							pass
-					callback(node)
+				#if stanza.get('type') == 'result':
+				#	node = Node(server=stanza.get('from'), name=stanza.find('{http://jabber.org/protocol/disco#info}query').get('node'))
+				#	#for element in stanza.xpath("//query"):
+				#	for element in stanza.find("{http://jabber.org/protocol/disco#info}query"):
+				#		try:
+				#			if element.get('type') == 'collection':
+				#				node.set_type('collection')
+				#			elif element.get('type') == 'leaf':
+				#				node.set_type('leaf')
+				#		except:
+				#			pass
+				#	callback(node)
+				#etree.tostring()
+				pass
 
 		self.send(stanza, handler, return_function)
 
@@ -310,12 +313,12 @@ class PubSubClient(object):
 		or Server)."""
 		################################## CHECK ME #########################
 		### IS THE QUERY'S NODE ATTRIBUTE node_name OR self.get_jid(jid)? ###
-		#contents = """<iq type='get'
-		#    from='""" + self.get_jid(jid) + """'
-		#    to='""" + server + """'>
+		#<iq type='get'
+		#    from='jid'
+		#    to='server'>
 		#  <query xmlns='http://jabber.org/protocol/disco#items'
-		#         node='""" + self.get_jid(jid) + """'/>
-		#</iq>"""
+		#         node='jid'/>
+		#</iq>
 
 		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
 		query = SubElement(stanza, 'query', attrib={'xmlns':'http://jabber.org/protocol/disco#items', 'node':str(node)})
@@ -1399,11 +1402,16 @@ class PubSubClient(object):
 class Node(object):
 
 	def __init__(self, server=None, name=None, jid=None, type=None, parent=None):
-		self.set_server(server)
-		self.set_name(name)
-		self.set_jid(jid)
-		self.set_type(type)
-		self.set_parent(parent)
+		if server is not None:
+			self.set_server(server)
+		if name is not None:
+			self.set_name(name)
+		if jid is not None:
+			self.set_jid(jid)
+		if type is not None:
+			self.set_type(type)
+		if parent is not None:
+			self.set_parent(parent)
 
 	def __str__(self):
 		return self.name
@@ -1466,7 +1474,8 @@ class Node(object):
 class Server(object):
 
 	def __init__(self, name=None):
-		self.set_name(name)
+		if name is not None:
+			self.set_name(name)
 
 	def set_name(self, name):
 		self.name = name

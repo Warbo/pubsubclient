@@ -11,7 +11,7 @@ from lxml.etree import ElementTree, Element, SubElement
 import pygtk
 import gtk
 import gobject
-import webkit
+#import webkit
 import feedparser
 from StringIO import StringIO
 from kiwi.ui.objectlist import Column, ObjectTree, ObjectList
@@ -31,7 +31,7 @@ class Display:
 
 	def __init__(self):
 		# Make a connection (currently hard coded to my testing server)
-		self.jid = 'test2@localhost'
+		self.jid = 'test1@localhost'
 		self.password = 'test'
 		self.client = pubsubclient.PubSubClient(self.jid, self.password)
 		self.draw_window()
@@ -68,10 +68,10 @@ class Display:
 		self.entry_list = ObjectList([title_column, author_column, date_column])
 		self.right_vpaned.pack1(self.entry_list)
 
-		self.webscroll = gtk.ScrolledWindow()
-		self.webview = webkit.WebView()
-		self.webscroll.add(self.webview)
-		self.right_vpaned.pack2(self.webscroll)
+		#self.webscroll = gtk.ScrolledWindow()
+		#self.webview = webkit.WebView()
+		#self.webscroll.add(self.webview)
+		#self.right_vpaned.pack2(self.webscroll)
 
 		self.window.show_all()
 
@@ -220,7 +220,7 @@ class Display:
 
 if __name__ == '__main__':
 	display = Display()
-	display.webview.open(os.getcwd() + "/start.html")
+	#display.webview.open(os.getcwd() + "/start.html")
 	display.connect()
 	display.client.subscribe_to_a_node('pubsub.localhost', '/home')
 	display.populate('pubsub.localhost')

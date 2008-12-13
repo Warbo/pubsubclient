@@ -157,6 +157,8 @@ class Window(object):
 
 				node.get_information(self.client, self.handle_information)
 
+			node.get_sub_nodes(self.client, self.handle_incoming)
+
 	def handle_information(self, node):
 		known = False
 		if node.type == 'leaf':
