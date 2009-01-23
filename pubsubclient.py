@@ -20,12 +20,9 @@
 ### * Any usage of a server URL should accept a string AND a Server
 ### * Combine some of PubSubClient's methods into fewer, more generic ones
 ### * Make some of PubSubClient's methods private after API stabilises
-### * Possible new objects: Entity? Affiliate? JID? Option?
+### * Possible new objects: Entity? Affiliate? Option?
 
-import sys
-import os
 import xmpp
-import time
 import string
 from random import Random
 from StringIO import StringIO
@@ -76,15 +73,17 @@ class PubSubClient(object):
 		# First try connecting to the server
 		connection_result = self.connection.connect()
 		if not connection_result:
-			print "Could not connect to server " + self.server
+			print "Could not connect to server " + str(self.server)
 			return 1
 		if connection_result != 'tls':
 			print "Warning: Could not use TLS"
 
 		# Then try to log in
-		authorisation_result = self.connection.auth(self.user,self.password, self.resource)
+		authorisation_result = self.connection.auth(self.user, \
+													self.password, \
+													self.resource)
 		if not authorisation_result:
-			print "Could not get authorized. Username or password problem?"
+			print "Could not get authorized. Username/password problem?"
 			return 1
 		if authorisation_result != 'sasl':
 			print "Warning: Could not use SASL"
@@ -784,7 +783,7 @@ class PubSubClient(object):
 		#  </pubsub>
 		#</iq>
 
-		self.node_configuration_generic(server, node, None, stana_id)
+		self.node_configuration_generic(server, node, None, stanza_id)
 
 	def submit_node_configuration_form(self, server, node, options, return_function=None, stanza_id=None):
 		#<iq type='set' from='us' to='them'>
@@ -1125,7 +1124,7 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def subscribe_to_root_collection_node(self, server, return_function=None, stanza_id=None):
+	def subscribe_to_root_collection_node(self, server, jid=None, return_function=None, stanza_id=None):
 		#contents = """<iq type='set'
 		#    from='""" + self.get_jid() + """'
 		#    to='""" + server + """'>
@@ -1400,6 +1399,7 @@ class PubSubClient(object):
 		self.send(stanza, handler, return_function)
 
 class Node(object):
+	"""Pointer to a PubSub Node."""
 
 	def __init__(self, server=None, name=None, jid=None, type=None, parent=None):
 		if server is not None:
@@ -1417,6 +1417,8 @@ class Node(object):
 		return self.name
 
 	def set_server(self, server):
+		"""Sets the server which this Node object points to (does NOT
+		edit any actual nodes, only this pointer!)"""
 		if type(server) == type("string"):
 			self.server = Server(server)
 		elif type(server) == type(Server()):
@@ -1425,21 +1427,31 @@ class Node(object):
 			print "Error: server must be a string or a Server."
 
 	def set_name(self, name):
+		"""Sets the node name which this Node object points to (does NOT
+		edit any actual nodes, only this pointer!)"""
 		self.name = name
 
 	def set_jid(self, jid):
 		self.jid = jid
 
 	def set_type(self, type):
+		"""Sets the type of this Node object. Does not edit the actual
+		node."""
 		self.type = type
 
 	def set_parent(self, parent):
+		"""Sets the parent collection node of this Node object. Does
+		not edit the actual node."""
 		self.parent = parent
 
 	def get_sub_nodes(self, client, callback=None):
+		"""Queries this node for its children. Passes a list of Nodes
+		it finds to the return_function when a reply is received."""
 		client.get_nodes(self.server, self, return_function=callback)
 
 	def get_items(self, client, callback=None):
+		"""TODO: Queries this node for the items it contains. Returns a list
+		of the strings contained in the items."""
 		client.get_items(self.server, self.name, return_function=callback)
 
 	def get_information(self, client, callback=None):
@@ -1461,9 +1473,6 @@ class Node(object):
 
 	def modify_affiliations(self, client, affiliation_dictionary, return_function=None):
 		client.modify_affiliation(self.server, self, affiliation_dictionary, return_function)
-
-	def get_information(self, client, return_function=None):
-		client.get_node_information(self.server, self, return_function)
 
 	def publish(self, client, body, id=None, return_function=None):
 		client.publish(self.server, self, body, id, None, return_function)

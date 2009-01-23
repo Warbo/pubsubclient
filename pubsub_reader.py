@@ -15,6 +15,7 @@ import gobject
 import feedparser
 from StringIO import StringIO
 from kiwi.ui.objectlist import Column, ObjectTree, ObjectList
+import xdg.BaseDirectory
 
 class LeftRow:
     def __init__(self, name, count, unread):
@@ -29,10 +30,11 @@ class FoundRow:
 
 class Display:
 
-	def __init__(self):
+	def __init__(self, cache_directory, username, password):
+
 		# Make a connection (currently hard coded to my testing server)
-		self.jid = 'test1@localhost'
-		self.password = 'test'
+		self.jid = username
+		self.password = password
 		self.client = pubsubclient.PubSubClient(self.jid, self.password)
 		self.draw_window()
 
@@ -142,6 +144,7 @@ class Display:
 		self.add_window['window'].show_all()
 
 	def pulse_find_progress(self):
+		"""Updates the progress bar when finding new nodes."""
 		time.sleep(0.05)
 		self.add_window['find_progress'].pulse()
 		return self.finding
@@ -168,11 +171,14 @@ class Display:
 		self.add_window['window'].show_all()
 
 	def connect(self):
+		# Try to connect
 		connected = self.client.connect()
+		# Check if we succeeded
 		if connected == 1:
 			print 'Failed to connect, exiting'
 			sys.exit(1)
 		self.connected = True
+		# Process new messages when there's nothing else to do
 		gobject.idle_add(self.idle_process)
 
 	def handle_incoming(self, stanza):
@@ -219,9 +225,37 @@ class Display:
 		gtk.main()
 
 if __name__ == '__main__':
-	display = Display()
+	# Check for a writable cache folder, if none found then make one
+	if not 'pubsubclient' in os.listdir(xdg.BaseDirectory.xdg_cache_home):
+		try:
+			os.mkdir(xdg.BaseDirectory.xdg_cache_home + '/pubsubclient')
+		except:
+			print 'Error: Could not create cache directory ' + xdg.BaseDirectory.xdg_cache_home + '/pubsubclient'
+	# Check for a configuration folder, if none found then make one
+	if not 'pubsubclient' in os.listdir(xdg.BaseDirectory.xdg_config_dirs[0]):
+		try:
+			os.mkdir(xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient')
+		except:
+			print 'Error: Could not create config directory ' + xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient'
+	# Check for a configuration file, if none found then make one
+	if not 'login' in os.listdir(xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient'):
+		id = raw_input("Please enter your Jabber ID: ")
+		password = raw_input("Please enter your password: ")
+	else:
+		try:
+			login_file = open(xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient/login', 'r')
+			for line in login_file.readlines():
+				if line[:4] == 'jid':
+					id = line[4:].strip()
+				elif line[:5] == 'pass:':
+					password = line[5:].strip()
+		except:
+			print 'Error: Could not read login details from '+ xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient/login'
+			id = raw_input("Please enter your Jabber ID: ")
+			password = raw_input("Please enter your password: ")
+	display = Display(xdg.BaseDirectory.xdg_cache_home + '/pubsubclient', id, password)
 	#display.webview.open(os.getcwd() + "/start.html")
 	display.connect()
-	display.client.subscribe_to_a_node('pubsub.localhost', '/home')
-	display.populate('pubsub.localhost')
+	#display.client.subscribe('pubsub.localhost', '/home')
+	#display.populate('pubsub.localhost')
 	display.main()
