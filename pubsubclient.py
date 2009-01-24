@@ -1398,6 +1398,23 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
+	def retrieve_subscriptions(self, return_function):
+		#<iq type='get'
+		#    from='francisco@denmark.lit/barracks'
+		#    to='pubsub.shakespeare.lit'
+		#    id='subscriptions1'>
+		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
+		#    <subscriptions/>
+		#  </pubsub>
+		#</iq>
+		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
+		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
+		subscriptions = SubElement(pubsub, 'subscriptions')
+		def handler(stanza, callback):
+			print etree.tostring
+
+		self.send(stanza, handler, return_function)
+
 class Node(object):
 	"""Pointer to a PubSub Node."""
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import xmpp
 import sys
 import os
@@ -90,7 +92,7 @@ class Display:
 		elif reply.find(".//result") is not None:
 			print "Subscription successful!"
 			self.add_window['window'].destroy()
-			self.node_list.append(LeftRow("lol", 0, 0))
+			self.node_list.append(LeftRow("test", 0, 0))
 
 	def add_released(self, args):
 		self.add_window = {}
