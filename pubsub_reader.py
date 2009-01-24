@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# Import what we need
 import xmpp
 import sys
 import os
@@ -20,28 +21,42 @@ from kiwi.ui.objectlist import Column, ObjectTree, ObjectList
 import xdg.BaseDirectory
 
 class LeftRow:
+	"""This is a row on the left-hand pane."""
+
     def __init__(self, name, count, unread):
+    	"""name is the name to display, count is the number of items,
+    	unread is the number of unread items."""
         self.name = name
         self.count = count
         self.unread = unread
 
 class FoundRow:
+	"""This is a row in the window which finds and subscribes new nodes."""
+
 	def __init__(self, name, node):
+		"""name is the name to display, node is the path of the node on
+		the server."""
 		self.name = name
 		self.node = node
 
 class Display:
+	"""This is the main window class."""
 
 	def __init__(self, cache_directory, username, password):
-
-		# Make a connection (currently hard coded to my testing server)
+		"""cache_directory is the directory to store downloaded data in,
+		username is the JID to login with, password is the password used
+		to log in."""
+		# Make a connection
 		self.jid = username
 		self.password = password
 		self.client = pubsubclient.PubSubClient(self.jid, self.password)
+
+		# Make the window
 		self.draw_window()
 
 	def draw_window(self):
-		# Display related things
+		"""Display related things."""
+
 		# Make a window and split it into sections
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.hpaned = gtk.HPaned()
@@ -80,24 +95,33 @@ class Display:
 		self.window.show_all()
 
 	def disable_subscribe_button(self, args):
+		"""Makes the subscribe button in the add-new-subscription
+		dialogue insensitive."""
 		self.add_window['add_button'].set_sensitive(False)
 
 	def subscribe_to_node(self, args):
+		"""Subscribes the logged in account to the node selected in the
+		add-new-subscription dialogue."""
 		self.add_window['node_list'].get_selected().subscribe(self.client, self.jid, return_function=self.subscription_finished)
 
 	def subscription_finished(self, reply):
+		"""Handles replies to subscription requests."""
 		print 'Reply received"'
 		if reply.find(".//error") is not None:
 			print "Error subscribing"
 		elif reply.find(".//result") is not None:
 			print "Subscription successful!"
+			# Close the new-subscription dialogue
 			self.add_window['window'].destroy()
+			# Add the subscribed-to node to the list of subscriptions
 			self.node_list.append(LeftRow("test", 0, 0))
 
 	def add_released(self, args):
+		"""Run when the "Subscribe" button is pressed."""
+		# Make a place to store all of the new GTK stuff
 		self.add_window = {}
 
-		# Make the Add Node window
+		# Make the Add Node window and put it in there
 		self.add_window['window'] = gtk.Window()
 		self.add_window['window'].set_title("Add New Subscription")
 
@@ -136,6 +160,7 @@ class Display:
 		self.add_window['add_button'].connect("released", self.subscribe_to_node)
 		self.add_window['bottom_hbox'].pack_end(self.add_window['add_button'], expand=False)
 
+		# Add the list of found nodes
 		self.add_window['name_column'] = Column('name', 'Name')
 		self.add_window['location_column'] = Column('name', 'Location')
 		self.add_window['name_column'].expand = True
@@ -143,36 +168,53 @@ class Display:
 		self.add_window['node_list'] = ObjectList([self.add_window['name_column'], self.add_window['location_column']])
 		self.add_window['vbox'].pack_end(self.add_window['node_list'], expand=True, fill=True)
 
+		# Display everything
 		self.add_window['window'].show_all()
 
 	def pulse_find_progress(self):
 		"""Updates the progress bar when finding new nodes."""
+		# Sleep here so that we aren't checking for replies constantly
 		time.sleep(0.05)
+		# Do the pulsing
 		self.add_window['find_progress'].pulse()
+		# Return whether we're still searching
 		return self.finding
 
 	def find_new_nodes(self, arg):
+		"""Search for nodes at the server entered in the add-new-subscription window."""
 		self.add_window["entered_server"] = pubsubclient.Server(name=self.add_window['location_entry'].get_text())
 		self.client.get_nodes(self.add_window["entered_server"], None, return_function=self.found_new_nodes)
+		# Remember that we're still on the lookout for nodes
 		self.finding = True
 		gobject.idle_add(self.pulse_find_progress)
 
 	def found_new_nodes(self, reply):
 		"""The program waits until this is run. Could be more elegant
 		using a signal though"""
+		# We don't need to search any more
 		self.finding = False
+		# Run the following if we end up with a failure
 		if reply == "error":
+			# Reset the search progress
 			self.add_window['find_progress'].set_fraction(0.0)
+			# Tell the user we've failed to find anything due to an error
 			self.add_window['find_progress'].set_text('Error finding nodes at ' + self.add_window['location_entry'].get_text())
+		# Run the following if we end up with a success
 		else:
+			# Traverse the nodes we've received
 			for node in reply:
+				# Add each one to the add-subscription-dialogue's list
 				self.add_window['node_list'].append(node)
+				# Get any children of the discovered nodes
 				node.get_sub_nodes(self.client, self.found_new_nodes)
+				# We're now finding for children, so keep up the search
 				self.finding = True
 
+		# Display the new window contents
 		self.add_window['window'].show_all()
 
 	def connect(self):
+		"""Connect the account given during initialisation."""
 		# Try to connect
 		connected = self.client.connect()
 		# Check if we succeeded
@@ -182,6 +224,13 @@ class Display:
 		self.connected = True
 		# Process new messages when there's nothing else to do
 		gobject.idle_add(self.idle_process)
+		self.client.retrieve_subscriptions(self.add_nodes)
+
+	def add_nodes(self, nodes):
+		"""Adds the given nodes to the subscribed list."""
+		for node in nodes:
+			if node not in self.node_list:
+				self.node_list.append(LeftRow(node.name, 0, 0))
 
 	def handle_incoming(self, stanza):
 		#os.popen("mkdir -p pages/")
@@ -212,8 +261,14 @@ class Display:
 		self.client.process()
 
 	def idle_process(self):
+		"""Check for new messages. Good to run in gobject idle time."""
+		# It's a good idea to wait a bit betweeen updates, to stop
+		# overworking the machine
 		time.sleep(0.1)
+		# Do the processing
 		self.process()
+		# Idle functions stop being called when they return False, in
+		# this case when we disconnect
 		return self.connected
 
 	def destroy(self, widget, data=None):
@@ -221,25 +276,26 @@ class Display:
 		gtk.main_quit()
 
 	def main(self):
+		"""Initialises and starts the GTK main loop."""
 		#gobject.idle_add(self.idle_process)
 		self.window.connect("destroy", self.destroy)
 		self.client.assign_message_handler(self.handle_incoming)
 		gtk.main()
 
 if __name__ == '__main__':
-	# Check for a writable cache folder, if none found then make one
+	# Check for a writable cache folder, if none is found then make one
 	if not 'pubsubclient' in os.listdir(xdg.BaseDirectory.xdg_cache_home):
 		try:
 			os.mkdir(xdg.BaseDirectory.xdg_cache_home + '/pubsubclient')
 		except:
 			print 'Error: Could not create cache directory ' + xdg.BaseDirectory.xdg_cache_home + '/pubsubclient'
-	# Check for a configuration folder, if none found then make one
+	# Check for a configuration folder, if none is found then make one
 	if not 'pubsubclient' in os.listdir(xdg.BaseDirectory.xdg_config_dirs[0]):
 		try:
 			os.mkdir(xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient')
 		except:
 			print 'Error: Could not create config directory ' + xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient'
-	# Check for a configuration file, if none found then make one
+	# Check for a configuration file, if none is found then make one
 	if not 'login' in os.listdir(xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient'):
 		id = raw_input("Please enter your Jabber ID: ")
 		password = raw_input("Please enter your password: ")
@@ -255,9 +311,16 @@ if __name__ == '__main__':
 			print 'Error: Could not read login details from '+ xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient/login'
 			id = raw_input("Please enter your Jabber ID: ")
 			password = raw_input("Please enter your password: ")
+	# Make a main window
 	display = Display(xdg.BaseDirectory.xdg_cache_home + '/pubsubclient', id, password)
+
 	#display.webview.open(os.getcwd() + "/start.html")
+
+	# Log on to XMPP
 	display.connect()
+
 	#display.client.subscribe('pubsub.localhost', '/home')
 	#display.populate('pubsub.localhost')
+
+	# Run the program
 	display.main()
