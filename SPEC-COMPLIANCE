@@ -35,7 +35,7 @@ Current spec at time of writing: 1.12 (2008-09-03)
 5.3. Discover Node Information:							Implemented as pubsubclient.
 5.4. Discover Node Meta-Data:							Implemented as pubsubclient.
 5.5. Discover Items for a Node:							Implemented as Node.get_items
-5.6. Retrieve Subscriptions:							NO HANDLER
+5.6. Retrieve Subscriptions:							Implemented as pubsubclient.retrieve_subscriptions
 5.7. Retrieve Affiliations:								NO HANDLER
 
 6. Subscriber Use Cases:

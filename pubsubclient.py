@@ -68,6 +68,12 @@ class PubSubClient(object):
 		# must be unique for their session
 		self.used_ids = []
 
+		# Assign a default printing handler for messages
+		self.assign_message_handler(self.default_handler)
+
+	def default_handler(self, message):
+		print etree.tostring(message)
+
 	def connect(self):
 		"""Turn on the connection. Returns 1 for error, 0 for success."""
 		# First try connecting to the server
@@ -1420,15 +1426,16 @@ class PubSubClient(object):
 
 		If given, return_function is run upon a reply being received with
 		a dictionary in the format
-		{node_name:{'jid':subscribed_jid, 'state':subscription_state, 'subid':subscription_id}}
+		{server_name:{node_name:{'jid':subscribed_jid, 'state':subscription_state, 'subid':subscription_id}}}
 		where 'jid', 'state' and 'subid' are literally those strings,
-		whilst node_name is a string of the node ID, subscribed_jid is a
-		string of the JID used to subscribe to this node (which may
-		include a resource, depending on how the subscription was made),
-		subscription_state is a string of 'subscribed', 'pending' or
-		'unconfigured' and subscription_id is an optional string of this
-		subscription's unique ID (depending whether the server gives
-		subscriptions and ID or not).
+		whilst server_name is the address of the server, node_name is a
+		string of the node ID, subscribed_jid is a string of the JID
+		used to subscribe to this node (which may include a resource,
+		depending on how the subscription was made), subscription_state
+		is a string of 'subscribed', 'pending' or 'unconfigured' and
+		subscription_id is an optional string of this subscription's
+		unique ID (depending whether the server gives subscriptions an
+		ID or not).
 
 		If an error is received, the return_function is run with False."""
 		# Server
@@ -1487,8 +1494,10 @@ class PubSubClient(object):
 					callback(False)
 				# If we get a successful reply, there's a bit more work to do
 				elif stanza.get('type') == 'result':
+					# Get server name
+					reply_server = stanza.get('from')
 					# Initialise an empty dictionary
-					subscriptions_dict = {}
+					subscriptions_dict = {reply_server:{}}
 					# Look for any <subscriptions> elements
 					for subscriptions in stanza.xpath(".//{http://jabber.org/protocol/pubsub}subscriptions"):
 						# Look inside the <subscriptions> element for actual subscriptions
@@ -1496,13 +1505,13 @@ class PubSubClient(object):
 							# The subid attribute is optional, so check for it
 							if subscription.get('subid') is not None:
 								# If found then construct the reply using it
-								subscriptions_dict[subscription.get('node')] = {\
+								subscriptions_dict[reply_server][subscription.get('node')] = {\
 									'jid':subscription.get('jid'), \
 									'state':subscription.get('subscription'), \
 									'subid':subscription.get('subid')}
 							else:
 								# If not found then construct the reply without it
-								subscriptions_dict[subscription.get('node')] = {\
+								subscriptions_dict[reply_server][subscription.get('node')] = {\
 									'jid':subscription.get('jid'), \
 									'state':subscription.get('subscription')}
 					# Run the callback with the derived reply
