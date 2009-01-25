@@ -864,6 +864,12 @@ class PubSubClient(object):
 		self.send(stanza, handler, return_function)
 
 	def delete_a_node(self, server, node, return_function=None, stanza_id=None):
+		"""Delete the given node from the given server.
+
+		If given, return_function is run upon reply with a value of
+		True if the deletion was successful, or False if there was an
+		error."""
+		## FIXME: Give different results for different types of error.
 		#<iq type='set'
 		#    from='us'
 		#    to='them'>
@@ -881,9 +887,9 @@ class PubSubClient(object):
 			#    id='delete1'/>
 			if callback is not None:
 				if stanza.get("type") == "result":
-					callback(0)
+					callback(True)
 				elif stanza.get("type") == "error":
-					callback(etree.tostring(stanza))
+					callback(False)
 
 
 		self.send(stanza, handler, return_function)
@@ -1398,7 +1404,24 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def retrieve_subscriptions(self, return_function):
+	def retrieve_subscriptions(self, server, node=None, return_function=None, stanza_id=None):
+		"""Retrieve any subscriptions which the current account has on
+		the given server. If a node is given, retrieve any subscriptions
+		which the current account has on the given node on the given
+		server.
+
+		If given, return_function is run upon a reply being received with
+		a dictionary in the format
+		{node_name:{'jid':subscribed_jid, 'state':subscription_state, 'subid':subscription_id}}
+		where 'jid', 'state' and 'subid' are literally those strings,
+		whilst node_name is a string of the node ID, subscribed_jid is a
+		string of the JID used to subscribe to this node (which may
+		include a resource, depending on how the subscription was made),
+		subscription_state is a string of 'subscribed', 'pending' or
+		'unconfigured' and subscription_id is an optional string of this
+		subscription's unique ID (depending whether the server gives
+		subscriptions and ID or not)."""
+		# Server
 		#<iq type='get'
 		#    from='francisco@denmark.lit/barracks'
 		#    to='pubsub.shakespeare.lit'
@@ -1407,11 +1430,51 @@ class PubSubClient(object):
 		#    <subscriptions/>
 		#  </pubsub>
 		#</iq>
-		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
+		#Node
+		#<iq type='get'
+		#    from='francisco@denmark.lit/barracks'
+		#    to='pubsub.shakespeare.lit'
+		#    id='subscriptions2'>
+		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
+		#    <subscriptions node='princely_musings'/>
+		#  </pubsub>
+		#</iq>
+		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})		# Is it correct to use self.server here?
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
-		subscriptions = SubElement(pubsub, 'subscriptions')
+		if node is not None:
+			subscriptions = SubElement(pubsub, 'subscriptions', attrib={'node':str(node)})
+		else:
+			subscriptions = SubElement(pubsub, 'subscriptions')
 		def handler(stanza, callback):
-			print etree.tostring
+			#Subscriptions
+			#<iq type='result'
+			#    from='pubsub.shakespeare.lit'
+			#    to='francisco@denmark.lit'
+			#    id='subscriptions1'>
+			#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			#    <subscriptions>
+			#      <subscription node='node1' jid='francisco@denmark.lit' subscription='subscribed'/>
+			#      <subscription node='node2' jid='francisco@denmark.lit' subscription='subscribed'/>
+			#      <subscription node='node5' jid='francisco@denmark.lit' subscription='unconfigured'/>
+			#      <subscription node='node6' jid='francisco@denmark.lit' subscription='pending'/>
+			#    </subscriptions>
+			#  </pubsub>
+			#</iq>
+			#No Subscriptions
+			#<iq type='result'
+			#    from='pubsub.shakespeare.lit'
+			#    to='francisco@denmark.lit/barracks'
+			#    id='subscriptions1'>
+			#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			#    <subscriptions/>
+			#  </pubsub>
+			#</iq>
+			if callback is not None:
+				if stanza.get('type') == 'error':
+
+
+
+			print etree.tostring(stanza)
 
 		self.send(stanza, handler, return_function)
 
@@ -1514,6 +1577,6 @@ class Server(object):
 
 class JID(xmpp.JID, object):
 
-	def __init__(self, string):
+	def __init__(self, string='none@none'):
 		super(JID, self).__init__(string)
 		self.name = str(self)

@@ -158,12 +158,12 @@ Current spec at time of writing: 1.12 (2008-09-03)
 8.3.3. Error Cases:		NO HANDLER
 8.3.3.1. Node Configuration Not Supported:		NO HANDLER
 8.3.3.2. Default Configuration Retrieval Not Supported:		NO HANDLER
-8.4. Delete a Node:		NO HANDLER
-8.4.1. Request:		NO HANDLER
-8.4.2. Success Case:		NO HANDLER
-8.4.3. Error Cases:		NO HANDLER
-8.4.3.1. Insufficient Privileges:		NO HANDLER
-8.4.3.2. Node Does Not Exist:		NO HANDLER
+8.4. Delete a Node:		Implemented as pubsubclient.delete_a_node
+8.4.1. Request:		Implemented as pubsubclient.delete_a_node
+8.4.2. Success Case:		Runs return_function with True
+8.4.3. Error Cases:		Runs return_function with False
+8.4.3.1. Insufficient Privileges:		Runs return_function with False
+8.4.3.2. Node Does Not Exist:		Runs return_function with False
 8.5. Purge All Node Items:		NO HANDLER
 8.5.1. Request:		NO HANDLER
 8.5.2. Success Case:		NO HANDLER

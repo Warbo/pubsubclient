@@ -23,12 +23,12 @@ import xdg.BaseDirectory
 class LeftRow:
 	"""This is a row on the left-hand pane."""
 
-    def __init__(self, name, count, unread):
-    	"""name is the name to display, count is the number of items,
-    	unread is the number of unread items."""
-        self.name = name
-        self.count = count
-        self.unread = unread
+	def __init__(self, name, count, unread):
+		"""name is the name to display, count is the number of items,
+		unread is the number of unread items."""
+		self.name = name
+		self.count = count
+		self.unread = unread
 
 class FoundRow:
 	"""This is a row in the window which finds and subscribes new nodes."""
@@ -303,10 +303,12 @@ if __name__ == '__main__':
 		try:
 			login_file = open(xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient/login', 'r')
 			for line in login_file.readlines():
-				if line[:4] == 'jid':
+				if line[:4] == 'jid:':
 					id = line[4:].strip()
+					print "Found jid " + id
 				elif line[:5] == 'pass:':
 					password = line[5:].strip()
+					print "Found password " + password
 		except:
 			print 'Error: Could not read login details from '+ xdg.BaseDirectory.xdg_config_dirs[0] + '/pubsubclient/login'
 			id = raw_input("Please enter your Jabber ID: ")
