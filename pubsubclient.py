@@ -181,6 +181,7 @@ class PubSubClient(object):
 		# stanza argument is the reply stanza which has been received
 		def handler(stanza, to_run):
 			## FIXME: This handles <feature> but not <identity>
+			## FIXME: DO NOT REPLY IN XML!
 			if to_run is not None:
 				# See if the server is not in our server_properties tree
 				reply = Element('reply', attrib={'id':stanza.get('id')})
@@ -635,6 +636,11 @@ class PubSubClient(object):
 		self.send(stanza, handler, return_function)
 
 	def request_node(self, server, node, type, parent, options, return_function=None, stanza_id=None):
+		"""Asks the given server for a pubsub node. If node is None then
+		an instant node is made, if it is a string or Node then that is
+		used as the new node's ID. type can be 'collection' or 'leaf'
+		the type type ('collection' or 'leaf')."""
+		##FIXME: Explain the other options
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		create = SubElement(pubsub, 'create')
@@ -671,13 +677,15 @@ class PubSubClient(object):
 			#	id='create1'/>
 			if callback is not None:
 				if stanza.attrib.get("type") == "error":
-					callback(etree.tostring(stanza))
+					callback(False)
 				elif stanza.attrib.get("type") == "result":
-					callback(0)
+					callback(True)
 
 		self.send(stanza, handler, return_function)
 
 	def entity_request_instant_node(self, server, return_function=None, stanza_id=None):
+		"""Asks the given server for an instant node (ie. one without
+		a predetermined name/id)."""
 		#<iq type='set' from='us' to='them'>
 		#    <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 		#      <create/>
@@ -1420,7 +1428,9 @@ class PubSubClient(object):
 		subscription_state is a string of 'subscribed', 'pending' or
 		'unconfigured' and subscription_id is an optional string of this
 		subscription's unique ID (depending whether the server gives
-		subscriptions and ID or not)."""
+		subscriptions and ID or not).
+
+		If an error is received, the return_function is run with False."""
 		# Server
 		#<iq type='get'
 		#    from='francisco@denmark.lit/barracks'
@@ -1469,12 +1479,34 @@ class PubSubClient(object):
 			#    <subscriptions/>
 			#  </pubsub>
 			#</iq>
+
+			# Don't bother doing anything if we aren't going to act anyway
 			if callback is not None:
+				# Report errors as False
 				if stanza.get('type') == 'error':
-
-
-
-			print etree.tostring(stanza)
+					callback(False)
+				# If we get a successful reply, there's a bit more work to do
+				elif stanza.get('type') == 'result':
+					# Initialise an empty dictionary
+					subscriptions_dict = {}
+					# Look for any <subscriptions> elements
+					for subscriptions in stanza.xpath(".//{http://jabber.org/protocol/pubsub}subscriptions"):
+						# Look inside the <subscriptions> element for actual subscriptions
+						for subscription in subscriptions.xpath(".//{http://jabber.org/protocol/pubsub}subscription"):
+							# The subid attribute is optional, so check for it
+							if subscription.get('subid') is not None:
+								# If found then construct the reply using it
+								subscriptions_dict[subscription.get('node')] = {\
+									'jid':subscription.get('jid'), \
+									'state':subscription.get('subscription'), \
+									'subid':subscription.get('subid')}
+							else:
+								# If not found then construct the reply without it
+								subscriptions_dict[subscription.get('node')] = {\
+									'jid':subscription.get('jid'), \
+									'state':subscription.get('subscription')}
+					# Run the callback with the derived reply
+					callback(subscriptions_dict)
 
 		self.send(stanza, handler, return_function)
 
