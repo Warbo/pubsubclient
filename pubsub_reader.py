@@ -224,7 +224,7 @@ class Display:
 		self.connected = True
 		# Process new messages when there's nothing else to do
 		gobject.idle_add(self.idle_process)
-		self.client.retrieve_subscriptions(self.jid.)
+		self.client.retrieve_subscriptions(self.jid.getDomain(), return_function=self.subscriptions_received)
 
 	def subscriptions_received(self, subscriptions):
 		"""Handles replies to retrieve_subscriptions."""

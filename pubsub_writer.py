@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import xmpp
 import sys
 import os

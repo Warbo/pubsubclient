@@ -170,7 +170,7 @@ class PubSubClient(object):
 		self.callbacks[id] = [callback]
 		self.connection.send(etree.tostring(stanza))
 
-	def get_features(self, server, return_function=None, stanza_id=None):
+	def get_features(self, server, return_function=None, stanza_id=None):		#FIXME HANDLER USES XML!
 		"""Queries server (string or Server) for the XMPP features it
 		supports."""
 		# This is the kind of XML we want to send
@@ -234,7 +234,6 @@ class PubSubClient(object):
 		# This is run on any replies that are received (identified by
 		# their stanza id)
 		def handler(stanza, callback):
-			print "Handling"
 			#<iq type='result'
 			#    from='pubsub.shakespeare.lit'
 			#    to='francisco@denmark.lit/barracks'
@@ -272,7 +271,7 @@ class PubSubClient(object):
 
 		self.send(contents, handler, return_function)
 
-	def get_node_information(self, server, node, return_function=None, stanza_id=None):
+	def get_node_information(self, server, node, return_function=None, stanza_id=None):		#FIXME NEEDS MOAR INFO
 		"""Queries node (string or Node) on server (string or Server)
 		for its metadata."""
 		#<iq type='get' from='us' to='server'>
@@ -297,63 +296,73 @@ class PubSubClient(object):
 				#    ...
 				#  </query>
 				#</iq>
-				#if stanza.get('type') == 'result':
-				#	node = Node(server=stanza.get('from'), name=stanza.find('{http://jabber.org/protocol/disco#info}query').get('node'))
-				#	#for element in stanza.xpath("//query"):
-				#	for element in stanza.find("{http://jabber.org/protocol/disco#info}query"):
-				#		try:
-				#			if element.get('type') == 'collection':
-				#				node.set_type('collection')
-				#			elif element.get('type') == 'leaf':
-				#				node.set_type('leaf')
-				#		except:
-				#			pass
-				#	callback(node)
+				if stanza.get('type') == 'result':
+					node = Node(server=stanza.get('from'), name=stanza.find('{http://jabber.org/protocol/disco#info}query').get('node'))
+					#for element in stanza.xpath("//query"):
+					for element in stanza.find("{http://jabber.org/protocol/disco#info}query"):
+						try:
+							if element.get('type') == 'collection':
+								node.set_type('collection')
+							elif element.get('type') == 'leaf':
+								node.set_type('leaf')
+						except:
+							pass
+					callback(node)
 				#etree.tostring()
-				pass
 
 		self.send(stanza, handler, return_function)
 
 	def get_items(self, server, node, return_function=None, stanza_id=None):
 		"""Requests the items of node (string or Node) on server (string
 		or Server)."""
-		################################## CHECK ME #########################
-		### IS THE QUERY'S NODE ATTRIBUTE node_name OR self.get_jid(jid)? ###
 		#<iq type='get'
 		#    from='jid'
 		#    to='server'>
 		#  <query xmlns='http://jabber.org/protocol/disco#items'
-		#         node='jid'/>
+		#         node='node_name'/>
 		#</iq>
 
 		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
 		query = SubElement(stanza, 'query', attrib={'xmlns':'http://jabber.org/protocol/disco#items', 'node':str(node)})
 
 		def handler(stanza, callback):
-			print etree.tostring(stanza)
+			#<iq type='result'
+			#    from='pubsub.shakespeare.lit'
+			#    to='francisco@denmark.lit/barracks'
+			#    id='items1'>
+			#  <query xmlns='http://jabber.org/protocol/disco#items'
+			#         node='princely_musings'>
+			#    <item jid='pubsub.shakespeare.lit' name='368866411b877c30064a5f62b917cffe'/>
+			#    <item jid='pubsub.shakespeare.lit' name='3300659945416e274474e469a1f0154c'/>
+			#    <item jid='pubsub.shakespeare.lit' name='4e30f35051b7b8b42abe083742187228'/>
+			#    <item jid='pubsub.shakespeare.lit' name='ae890ac52d0df67ed7cfdf51b644e901'/>
+			#  </query>
+			#</iq>
+			if callback is not None:
+				if stanza.get('type') == 'error':
+					items = False
+				elif stanza.get('type') == 'result':
+					# Make an empty list to store discovered items in
+					items = []
+					# Find every 'item' element
+					for item in stanza.findall('.//{http://jabber.org/protocol/disco#items}item'):
+						# Add new Items to the items list for each
+						items.append(Item(jid=item.get('jid'), name=item.get('name')))
+				# Give the items found to the callback function
+				callback(items)
 
 		self.send(stanza, handler, return_function)
 
 	def get_subscriptions(self, server, node, return_function=None, stanza_id=None):
-		"""Requests subscriptions of node (string or Node) on server
-		(string or Server)."""
+		"""Redundant."""
 		#<iq type='get' from='us' to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 		#    <subscriptions/>
 		#  </pubsub>
 		#</iq>
-		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
-		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
-		subscriptions = SubElement(pubsub, 'subscriptions')
-		if node is not None:
-			subscriptions.set("node", str(node))
+		self.retrieve_subscriptions(server, node, return_function, stanza_id)
 
-		def handler(stanza, callback):
-			print etree.tostring(stanza)
-
-		self.send(stanza, handler, return_function)
-
-	def get_affiliations(self, server, return_function=None, stanza_id=None):
+	def get_affiliations(self, server, return_function=None, stanza_id=None):		#NO HANDLER
 		"""Requests all afilliations on server (string or Server)."""
 		#<iq type='get' from='us' to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
@@ -968,21 +977,15 @@ class PubSubClient(object):
 		self.send(stanza, handler, return_function)
 
 	def request_all_subscriptions(self, server, node, return_function=None, stanza_id=None):
-		#contents = """<iq type='get'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+		"""Redundant"""
+		#<iq type='get'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
-		#    <subscriptions node='""" + node_name + """'/>
+		#    <subscriptions node='node_name'/>
 		#  </pubsub>
-		#</iq>"""
-		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
-		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub#owner'})
-		subscriptions = SubElement(pubsub, 'subscriptions', attrib={'node':str(node)})
-
-		def handler(stanza, callback):
-			print etree.tostring(stanza)
-
-		self.send(stanza, handler, return_function)
+		#</iq>
+		self.retrieve_subscriptions(server, node, return_function, stanza_id)
 
 	def modify_subscriptions(self, server, node, subscriptions, return_function=None, stanza_id=None):
 		#contents = """<iq type='set'
@@ -1523,16 +1526,11 @@ class Node(object):
 	"""Pointer to a PubSub Node."""
 
 	def __init__(self, server=None, name=None, jid=None, type=None, parent=None):
-		if server is not None:
-			self.set_server(server)
-		if name is not None:
-			self.set_name(name)
-		if jid is not None:
-			self.set_jid(jid)
-		if type is not None:
-			self.set_type(type)
-		if parent is not None:
-			self.set_parent(parent)
+		self.set_server(server)
+		self.set_name(name)
+		self.set_jid(jid)
+		self.set_type(type)
+		self.set_parent(parent)
 
 	def __str__(self):
 		return self.name
@@ -1550,7 +1548,7 @@ class Node(object):
 	def set_name(self, name):
 		"""Sets the node name which this Node object points to (does NOT
 		edit any actual nodes, only this pointer!)"""
-		self.name = name
+		self.name = str(name)
 
 	def set_jid(self, jid):
 		self.jid = jid
@@ -1621,3 +1619,11 @@ class JID(xmpp.JID, object):
 	def __init__(self, string='none@none'):
 		super(JID, self).__init__(string)
 		self.name = str(self)
+
+class Item(object):
+	"""Something which has been, or can be, published to a Node."""
+
+	def __init__(name=None, jid=None, node=None):
+		self.name = name
+		self.jid = jid
+		self.node = node
