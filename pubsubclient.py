@@ -402,14 +402,12 @@ class PubSubClient(object):
 			#</iq>
 
 			if callback is not None:
-				reply = Element('reply')
 				if stanza.get('type') == 'error':
-					error = SubElement(reply, 'error')
+					reply = False
 				elif stanza.get('type') == 'result':
-					result = SubElement(reply, 'result')
-					server = SubElement(result, 'server', attrib={'url':stanza.get('from')})
+					reply = []
 					for subscription_element in stanza.xpath(".//subscription"):
-						server.append(Element('subscription', attrib={'node':subscription_element.get('node'), 'subid':subscription_element.get('subid')}))
+						reply.append({'node':subscription_element.get('node'), 'subid':subscription_element.get('subid'), 'server':stanza.get('from'), 'jid':subscription_element.get('jid')}))
 				callback(reply)
 
 		self.send(stanza, handler, return_function)
