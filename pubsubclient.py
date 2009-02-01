@@ -362,7 +362,7 @@ class PubSubClient(object):
 		#</iq>
 		self.retrieve_subscriptions(server, node, return_function, stanza_id)
 
-	def get_affiliations(self, server, return_function=None, stanza_id=None):		#NO HANDLER
+	def get_affiliations(self, server, return_function=None, stanza_id=None):		#FIXME NO HANDLER
 		"""Requests all afilliations on server (string or Server)."""
 		#<iq type='get' from='us' to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
@@ -379,7 +379,16 @@ class PubSubClient(object):
 		self.send(stanza, handler, return_function)
 
 	def subscribe(self, server, node, jid=None, return_function=None, stanza_id=None):
-		#c<iq type='set' from='francisco@denmark.lit/barracks' to='pubsub.shakespeare.lit'>
+		"""Subscribe the current JID to node on server. If supplied, jid
+		will be subscribed rather than the logged-in JID.
+
+		return_function is given a single argument. This is False if there
+		was an error, or if it was successful it is given a list of
+		dictionaries of the form:
+
+		[{'server':server_URL, 'jid':subscribed_jid, 'subid':subscription_ID}, {...}, ...]"""
+
+		#<iq type='set' from='francisco@denmark.lit/barracks' to='pubsub.shakespeare.lit'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 		#    <subscribe node='princely_musings' jid='francisco@denmark.lit'/>
 		#  </pubsub>
@@ -412,16 +421,20 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def unsubscribe(self, server, node, jid=None, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid(jid) + """'
-		#    to='""" + server + """'>
+	def unsubscribe(self, server, node, jid=None, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Unsubscribe the given jid (or if not supplied, the currently
+		logged-in JID) from node on server.
+
+		No reply handling yet."""		#FIXME: Add description of return_function arguments
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 		#     <unsubscribe
-		#         node='""" + node_name + """'
-		#         jid='""" + self.get_jid(jid, True) + """'/>
+		#         node='node_name'
+		#         jid='jid'/>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		unsubscribe = SubElement(pubsub, 'unsubscribe', attrib={'node':str(node), 'jid':self.get_jid(jid, True)})
@@ -431,14 +444,18 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def get_subscription_options(self, server, node, jid=None, return_function=None, stanza_id=None):
-		#contents = """<iq type='get'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def get_subscription_options(self, server, node, jid=None, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Request the subscription options of jid (or if not supplied,
+		the currently logged-in JID) for node on server.
+
+		No reply handling yet."""
+		#<iq type='get'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <options node='""" + node_name + """' jid='""" + self.get_jid(jid, True) + """'/>
+		#    <options node='node_name' jid='jid'/>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		options = SubElement(pubsub, 'options', attrib={'node':str(node), 'jid':self.get_jid(jid, True)})
@@ -448,13 +465,14 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def subscription_options_form_submission(self, server, node, options, jid=None, return_function=None, stanza_id=None):
+	def subscription_options_form_submission(self, server, node, options, jid=None, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
 		# options is the "x" Element (which should contain all of the SubElements needed)
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid(jid) + """'
-		#    to='""" + server + """'>
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <options node='""" + node_name + """' jid='""" + self.get_jid(jid, True) + """'>
+		#    <options node='node_name' jid='jid'>
 		#        <x xmlns='jabber:x:data' type='submit'>
 		#          <field var='FORM_TYPE' type='hidden'>
 		#            <value>http://jabber.org/protocol/pubsub#subscribe_options</value>
@@ -470,7 +488,7 @@ class PubSubClient(object):
 		#        </x>
 		#     </options>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		options_stanza = SubElement(pubsub, 'options', attrib={'node':str(node), 'jid':self.get_jid(jid, True)})
@@ -481,12 +499,13 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def subscribe_to_and_configure_a_node(self, server, node, options, jid=None, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid(jid) + """'
-		#    to='""" + server + """'>
+	def subscribe_to_and_configure_a_node(self, server, node, options, jid=None, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <subscribe node='""" + node_name + """' jid='""" + self.get_jid(jid, True) + """'/>
+		#    <subscribe node='node_name' jid='jid'/>
 		#    <options>
 		#      <x xmlns='jabber:x:data' type='submit'>
 		#        <field var='FORM_TYPE' type='hidden'>
@@ -503,7 +522,7 @@ class PubSubClient(object):
 		#      </x>
 		#    </options>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		subscribe = SubElement(pubsub, 'subscribe', attrib={'node':str(node), 'jid':self.get_jid(jid, True)})
@@ -515,7 +534,18 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def request_items_generic(self, server, node, specific, some, return_function=None, stanza_id=None):
+	def request_items_generic(self, server, node, specific=None, some=None, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""General method used to implement item requests.
+
+		Retrieve items which have been published to node on server.
+
+		If the optional argument specific is given as a list of item IDs
+		then those items are retrieved.
+
+		Replies are not yet handled."""
+
+		If a number is supplied as the optional argument some then it is
+		used as an upper limit the the number of items retrieved.
 		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		items = SubElement(pubsub, 'items', attrib={'node':str(node)})
@@ -530,15 +560,22 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def request_all_items(self, server, node, return_function=None, stanza_id=None):
+	def request_all_items(self, server, node, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Retrieve all of the items published to node on server.
+
+		Replies are not yet handled."""
 		#<iq type='get' from='us' to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 		#    <items node='my_blog'/>
 		#  </pubsub>
 		#</iq>
-		self.request_items_generic(server, node, None, None, return_function, stanza_id)
+		self.request_items_generic(server, node, return_function=return_function, stanza_id)
 
-	def request_specific_items(self, server, node, items, jid=None, return_function=None, stanza_id=None):
+	def request_specific_items(self, server, node, items, jid=None, return_function=None, stanza_id=None):		# FIXME NO HANDLER
+		"""Retrieves certain items which have been published to node on
+		server. items is a list of item IDs.
+
+		Replies are not yet handled."""
 		#<iq type='get' from='us' to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 		#    <items node='my_blog'>
@@ -546,17 +583,25 @@ class PubSubClient(object):
 		#    </items>
 		#  </pubsub>
 		#</iq>
-		self.request_items_generic(server, node, items, None, return_function, stanza_id)
+		self.request_items_generic(server, node, specific=items, return_function=return_function, stanza_id)
 
-	def request_some_items(self, server, node, item_count, return_function=None, stanza_id=None):
+	def request_some_items(self, server, node, item_count, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Retrieves (at most) the last item_count items which have been
+		published to node at server.
+
+		Replies are not yet handled."""
 		#<iq type='get' from='us' to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 		#    <items node='my_blog' max_items='5'/>
 		#  </pubsub>
 		#</iq>
-		self.request_items_generic(server, node, None, item_count, return_function, stanza_id)
+		self.request_items_generic(server, node, some=item_count, return_function=return_function, stanza_id)
 
-	def publish(self, server, node, body, item_id=None, jid=None, return_function=None, stanza_id=None):
+	def publish(self, server, node, body, item_id=None, jid=None, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Publish body to the node node on server. If item_id is
+		specified then request that it be used as the item's ID.
+
+		Replies are not yet handled."""
 		#<iq type='set'
 		#    from='us'
 		#    to='them'>
@@ -570,9 +615,17 @@ class PubSubClient(object):
 		#  </pubsub>
 		#</iq>
 
-		self.publish_with_options(server, node, body, None, item_id, jid, return_function, stanza_id)
+		self.publish_with_options(server, node, body, item_id=item_id, jid=jid, return_function=return_function, stanza_id)
 
-	def publish_with_options(self, server, node, body, options, item_id=None, jid=None, return_function=None, stanza_id=None):
+	def publish_with_options(self, server, node, body, options=None, item_id=None, jid=None, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Generic method to implement all publishing requests.
+
+		Publishes body as an item at node on server. If item_id is
+		given then requests that it be used as the item's ID.
+
+		options is not implemented sanely yet.
+
+		Replies are not yet handled."""
 		#<iq type='set'
 		#    from='us'
 		#    to='them'>
@@ -628,16 +681,19 @@ class PubSubClient(object):
 		print "Sending"
 		self.send(stanza, handler, return_function)
 
-	def delete_an_item_from_a_node(self, server, node, item_id, jid=None, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid(jid) + """'
-		#    to='""" + server + """'>
+	def delete_an_item_from_a_node(self, server, node, item_id, jid=None, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Removes the item with ID item_id from node at server.
+
+		Replies are not handled yet."""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <retract node='""" + self.get_jid(jid, True) + """'>
-		#      <item id='""" + item_id + """'/>
+		#    <retract node='node'>
+		#      <item id='item_id'/>
 		#    </retract>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		retract = SubElement(pubsub, 'retract', attrib={'node':str(node)})
@@ -648,11 +704,13 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def request_node(self, server, node, type, parent, options, return_function=None, stanza_id=None):
+	def request_node(self, server, node, type, parent, options=None, return_function=None, stanza_id=None):		#FIXME A LOT
 		"""Asks the given server for a pubsub node. If node is None then
 		an instant node is made, if it is a string or Node then that is
 		used as the new node's ID. type can be 'collection' or 'leaf'
-		the type type ('collection' or 'leaf')."""
+		the type type ('collection' or 'leaf').
+
+		Not implemented completely sanely yet."""
 		##FIXME: Explain the other options
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
@@ -696,7 +754,7 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def entity_request_instant_node(self, server, return_function=None, stanza_id=None):
+	def entity_request_instant_node(self, server, return_function=None, stanza_id=None):		#FIXME NO HANDLER
 		"""Asks the given server for an instant node (ie. one without
 		a predetermined name/id)."""
 		#<iq type='set' from='us' to='them'>
@@ -707,7 +765,13 @@ class PubSubClient(object):
 		#</iq>
 		self.request_node(server, None, "leaf", None, None, return_function, stanza_id)
 
-	def get_new_leaf_node(self, server, node, parent, options, return_function=None, stanza_id=None):
+	def get_new_leaf_node(self, server, node, parent, options, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Requests a new leaf node (which can store items) with name
+		node, as a sub-node of the node parent on server.
+
+		options is not yet implemented sanely.
+
+		Replies are not yet handled."""
 		#<iq type='set' from='us' to='them'>
 		#    <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 		#      <create node='my_blog'/>
@@ -716,7 +780,13 @@ class PubSubClient(object):
 		#</iq>
 		self.request_node(server, node, "leaf", parent, options, return_function, stanza_id)
 
-	def get_new_collection_node(self, server, node, parent, options, return_function=None, stanza_id=None):
+	def get_new_collection_node(self, server, node, parent, options, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Requests a new collection node (which can store nodes) with
+		name node, as a sub-node of the node parent on server.
+
+		options is not yet implemented sanely.
+
+		Replies are not yet handled."""
 		#<iq type='set'
 		#    from='us'
 		#    to='them'>
@@ -734,7 +804,8 @@ class PubSubClient(object):
 		#</iq>
 		self.request_node(server, node, "collection", parent, options, return_function, stanza_id)
 
-	def get_new_leaf_node_nondefault_access(self, server, node, access_model, return_function=None, stanza_id=None):
+	def get_new_leaf_node_nondefault_access(self, server, node, access_model, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
 		#<iq type='set' from='us' to='them'>
 		#    <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 		#      <create node='my_blog'/>
@@ -762,7 +833,8 @@ class PubSubClient(object):
 
 		self.entity_request_new_node_nondefault_configuration(server, node, x, stanza_id)
 
-	def entity_request_new_node_nondefault_configuration(self, server, node, options, return_function=None, stanza_id=None):
+	def entity_request_new_node_nondefault_configuration(self, server, node, options, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
 		#<iq type='set' from='us' to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
 		#    <create node='my_blog'/>
@@ -781,7 +853,8 @@ class PubSubClient(object):
 
 		self.request_node(server, node, options, return_function, stanza_id)
 
-	def node_configuration_generic(self, server, node, options, return_function=None, stanza_id=None):
+	def node_configuration_generic(self, server, node, options, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
 		stanza = Element('iq', attrib={'from':self.get_jid(), 'to':str(server)})
 		if options is not None:
 			stanza.set('type', 'set')
@@ -797,7 +870,10 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def request_node_configuration_form(self, server, node, return_function=None, stanza_id=None):
+	def request_node_configuration_form(self, server, node, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Request a form with which to configure node on server.
+
+		Replies are not yet handled."""
 		#<iq type='get' from='us' to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
 		#    <configure node='my_blog'/>
@@ -806,7 +882,8 @@ class PubSubClient(object):
 
 		self.node_configuration_generic(server, node, None, stanza_id)
 
-	def submit_node_configuration_form(self, server, node, options, return_function=None, stanza_id=None):
+	def submit_node_configuration_form(self, server, node, options, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
 		#<iq type='set' from='us' to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
 		#    <configure node='my_blog'>
@@ -824,7 +901,10 @@ class PubSubClient(object):
 
 		self.node_configuration_generic(server, node, options, stanza_id)
 
-	def cancel_node_configuration(self, server, node, return_function=None, stanza_id=None):
+	def cancel_node_configuration(self, server, node, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Retracts a request to reconfigure node on server.
+
+		Replies are not yet handled."""
 		#<iq type='set' from='us' to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
 		#    <configure node='my_blog'>
@@ -836,14 +916,18 @@ class PubSubClient(object):
 
 		self.submit_node_configuration_form(server, node, x, stanza_id)
 
-	def request_default_configuration_options(self, server, return_function=None, stanza_id=None):
-		#contents = """<iq type='get'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def request_default_configuration_options(self, server, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Asks server for the configuration which is used as default
+		for new nodes.
+
+		Replies are not yet handled."""
+		#<iq type='get'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
 		#    <default/>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub#owner'})
 		default = SubElement(pubsub, 'default')
@@ -853,10 +937,14 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def request_default_collection_configuration(self, server, node, return_function=None, stanza_id=None):
-		#contents = """<iq type='get'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def request_default_collection_configuration(self, server, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Ask server for the options which are applied by default to
+		new collection nodes.
+
+		Replies are not yet handled."""
+		#<iq type='get'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
 		#    <default>
 		#      <x xmlns='jabber:x:data' type='submit'>
@@ -867,7 +955,7 @@ class PubSubClient(object):
 		#      </x>
 		#    </default>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub#owner'})
 		default = SubElement(pubsub, 'default')
@@ -915,14 +1003,17 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def purge_all_items_from_a_node(self, server, node, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def purge_all_items_from_a_node(self, server, node, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Remove every item which has been published to node on server.
+
+		Replies are not yet handled."""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
-		#    <purge node='""" + node_name + """'/>
+		#    <purge node='node_name'/>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub#owner'})
 		purge = SubElement(pubsub, 'purge', attrib={'node':str(node)})
@@ -932,10 +1023,14 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def request_pending_subscription_requests(self, server, return_function=None, stanza_id=None):
-		## FIXME: Check spec, no "to"??!
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'>
+	def request_pending_subscription_requests(self, server, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Get every relevant request for subscription for nodes at
+		server.
+
+		Replies are not yet handled."""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <command xmlns='http://jabber.org/protocol/commands'
 		#           node='http://jabber.org/protocol/pubsub#get-pending'
 		#           action='execute'/>
@@ -948,20 +1043,24 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def request_pending_subscription_requests_for_a_node(self, server, node, time, return_function=None, stanza_id=None):
+	def request_pending_subscription_requests_for_a_node(self, server, node, time, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Ask server for every subscription request which has not yet
+		been handled for node.
+
+		Not yet implemented sanely."""
 		## FIXME: Check spec, no "from"??!
-		#contents = """<iq type='set' to='""" + server + """'>
+		#<iq type='set' to='them'>
 		#  <command xmlns='http://jabber.org/protocol/commands'
 		#           sessionid='pubsub-get-pending:20031021T150901Z-600'
 		#           node='http://jabber.org/protocol/pubsub#get-pending'
 		#           action='execute'>
 		#    <x xmlns='jabber:x:data' type='submit'>
 		#      <field var='pubsub#node'>
-		#        <value>""" + node_name + """</value>
+		#        <value>node_name</value>
 		#      </field>
 		#    </x>
 		#  </command>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		command = SubElement(stanza, 'command', attrib={'xmlns':'http://jabber.org/protocol/commands', 'sessionid':'pubsub-get-pending:' + time, 'node':'http://jabber.org/protocol/pubsub#get-pending', 'action':'execute'})
 		x = SubElement(command, 'x', attrib={'xmlns':'jabber:x:data', 'type':'submit'})
@@ -985,19 +1084,17 @@ class PubSubClient(object):
 		#</iq>
 		self.retrieve_subscriptions(server, node, return_function, stanza_id)
 
-	def modify_subscriptions(self, server, node, subscriptions, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def modify_subscriptions(self, server, node, subscriptions, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented in a sane way."""
+		#<iq type='set'
+		#    from='them'
+		#    to='us'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
-		#    <subscriptions node='""" + node_name + """'>
-		#"""
-		#		for current_jid in subscriptions.keys():
-		#			contents = contents + "      <subscription jid='" + current_jid + "' subscription='" + subscriptions[current_jid] + """'/>
-		#"""
-		#		contents = contents + """    </subscriptions>
+		#    <subscriptions node='node_name'>
+		#      <subscription jid='current_jid' subscription='subscribed'/>
+		#    </subscriptions>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub#owner'})
 		subscriptions = SubElement(pubsub, 'subscriptions', attrib={'node':str(node)})
@@ -1009,18 +1106,17 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def multiple_simultaneous_modifications(self, server, node, subscriptions, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def multiple_simultaneous_modifications(self, server, node, subscriptions, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented in a sane way."""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub#owner'>
-		#    <subscriptions node='""" + node_name + """'>"""
-		#		for current_subscription in subscriptions.keys():
-		#			contents = contents + "      <subscription jid='" + current_subscription + "' subscription='" + subscriptions[current_subscription] + """'/>
-		#		"""
-		#		contents = contents + """    </subscriptions>
+		#    <subscriptions node='node_name'>
+		#      <subscription jid='current_subscription' subscription='subscribed'/>
+		#    </subscriptions>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = ElementTree('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub#owner'})
 		subscriptions = SubElement(pubsub, 'subscriptions', attrib={'node':str(node)})
@@ -1033,6 +1129,17 @@ class PubSubClient(object):
 		self.send(stanza, handler, return_function)
 
 	def request_all_affiliated_entities(self, server, node, return_function=None, stanza_id=None):
+		"""Asks server for all entities (JIDs) affiliated in some way to
+		node.
+
+		An affiliation is owner, publisher or outcast. It does not
+		include subscribers.
+
+		If return_function is given, it is called upon reply with one
+		argument of False if there was an error, or if it was successful
+		a dictionary of the form:
+
+		{'publisher':[JID1, JID2, ...], 'owner':[JID3, JID4, ...], ...}"""
 		#<iq type='get'
 		#    from='us'
 		#    to='them'>
@@ -1055,20 +1162,28 @@ class PubSubClient(object):
 			#        </affiliations>
 			#    </pubsub>
 			#</iq>
-			print etree.tostring(stanza)
 			if callback is not None:
-				affiliations = stanza.find('.//{http://jabber.org/protocol/pubsub#owner}affiliations')
-				affiliation_dictionary = {}
-				if affiliations is not None:
-					for affiliation in affiliations:
-						if not affiliation.get("affiliation") in affiliation_dictionary.keys():
-							affiliation_dictionary[affiliation.get("affiliation")] = []
-						affiliation_dictionary[affiliation.get("affiliation")].append(JID(affiliation.get("jid")))
+				if stanza.get('type') == 'error':
+					affiliation_dictionary = False
+				elif stanza.get('type') == 'result':
+					affiliations = stanza.find('.//{http://jabber.org/protocol/pubsub#owner}affiliations')
+					affiliation_dictionary = {}
+					if affiliations is not None:
+						for affiliation in affiliations:
+							if not affiliation.get("affiliation") in affiliation_dictionary.keys():
+								affiliation_dictionary[affiliation.get("affiliation")] = []
+							affiliation_dictionary[affiliation.get("affiliation")].append(JID(affiliation.get("jid")))
 				callback(affiliation_dictionary)
 
 		self.send(stanza, handler, return_function)
 
-	def modify_affiliation(self, server, node, affiliations, return_function=None, stanza_id=None):
+	def modify_affiliation(self, server, node, affiliations, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Tells server to change the affiliation of some entities to
+		the node node. affiliations is a dictionary of the form:
+
+		{JID1:affiliation_type, JID2:affiliation_type, ...}
+
+		Replies are not yet handled."""
 		#<iq type='set'
 		#    from='us'
 		#    to='them'>
@@ -1094,15 +1209,16 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def subscribe_to_a_collection_node(self, server, node, jid, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def subscribe_to_a_collection_node(self, server, node, jid, return_function=None, stanza_id=None):		#FIXME REDUNDANT?
+		"""Not yet implemented in a sane way"""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <subscribe jid='""" + self.get_jid(jid, True) + """'
-		#               node='""" + node_name + """'/>
+		#    <subscribe jid='jid'
+		#               node='node_name'/>
 		#   </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		subscribe = SubElement(pubsub, 'subscribe', attrib={'jid':self.get_jid(jid, True), 'node':str(node)})
@@ -1112,13 +1228,14 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def subscribe_to_collection_node_with_configuration(self, server, node, options, jid=None, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def subscribe_to_collection_node_with_configuration(self, server, node, options, jid=None, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented in a sane way."""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <subscribe jid='""" + self.get_jid(jid, True) + """'
-		#               node='""" + node_name + """'/>
+		#    <subscribe jid='jid'
+		#               node='node_name'/>
 		#    <options>
 		#      <x xmlns='jabber:x:data' type='submit'>
 		#        <field var='FORM_TYPE' type='hidden'>
@@ -1133,7 +1250,7 @@ class PubSubClient(object):
 		#      </x>
 		#   </options>
 		# </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		subscribe = SubElement(pubsub, 'subscribe', attrib={'jid':self.get_jid(jid, True), 'node':str(node)})
@@ -1145,14 +1262,19 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def subscribe_to_root_collection_node(self, server, jid=None, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def subscribe_to_root_collection_node(self, server, jid=None, return_function=None, stanza_id=None):		#FIXME NO HANDLER XEP-0248?
+		"""Subscribe jid (or, if not supplied, the currently logged-in
+		JID) to the root collection node (the node which contains all
+		of the nodes) on server.
+
+		Replies are not yet handled."""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <subscribe jid='""" + self.get_jid(jid, True) + """'/>
+		#    <subscribe jid='jid'/>
 		# </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		subscribe = SubElement(pubsub, 'subscribe', attrib={'jid':self.get_jid(jid, True)})
@@ -1162,19 +1284,23 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def create_a_new_node_associated_with_a_collection(self, server, node, collection, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def create_a_new_node_associated_with_a_collection(self, server, node, collection, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+		"""Request a new node with name node on server server. The new
+		node will be a sub-node of the node collection.
+
+		Results are not yet handled."""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <create node='""" + node_name + """'/>
+		#    <create node='node_name'/>
 		#    <configure>
 		#      <x xmlns='jabber:x:data' type='submit'>
-		#        <field var='pubsub#collection'><value>""" + collection_name + """</value></field>
+		#        <field var='pubsub#collection'><value>collection_name</value></field>
 		#      </x>
 		#    </configure>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		create = SubElement(pubsub, 'create', attrib={'node':str(node)})
@@ -1189,7 +1315,8 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def modify_node_configuration(self, server, node, collection, return_function=None, stanza_id=None):
+	def modify_node_configuration(self, server, node, collection, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
 		# Sets node_name as member of collection_name
 		#<iq type='set'
 		#    from='us'
@@ -1221,7 +1348,8 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def modify_collection_configuration(self, server, node, collection, return_function=None, stanza_id=None):
+	def modify_collection_configuration(self, server, node, collection, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
 		# Make node_name a child of collection_name
 		## FIXME: This MUST include the current children too, but doesn't at the mo'
 		#<iq type='set'
@@ -1256,7 +1384,8 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def disassociate_collection_from_a_node(self, server, node, return_function=None, stanza_id=None):
+	def disassociate_collection_from_a_node(self, server, node, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely"""
 		## FIXME: This disassociates from EVERY collection. Should be able to specify collections
 		#<iq type='set'
 		#    from='us'
@@ -1288,7 +1417,8 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def disassociate_node_from_a_collection(self, server, node, collection, return_function=None, stanza_id=None):
+	def disassociate_node_from_a_collection(self, server, node, collection, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not implemented sanely yet"""
 		## FIXME: Needs fixing badly. This clears all children from the node
 		#<iq type='set'
 		#    from='us'
@@ -1322,21 +1452,22 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def time_based_subscribe(self, server, node, expire_time, jid=None, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def time_based_subscribe(self, server, node, expire_time, jid=None, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <options node='""" + node_name + """' jid='""" + self.get_jid(jid, True) + """'>
+		#    <options node='node_name' jid='jid'>
 		#        <x xmlns='jabber:x:data' type='submit'>
 		#          <field var='FORM_TYPE' type='hidden'>
 		#            <value>http://jabber.org/protocol/pubsub#subscribe_options</value>
 		#          </field>
-		#          <field var='pubsub#expire'><value>""" + expire_time + """</value></field>
+		#          <field var='pubsub#expire'><value>expire_time</value></field>
 		#        </x>
 		#     </options>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub#subscription_options'})
 		options = SubElement(pubsub, 'options', attrib={'node':str(node), 'jid':self.get_jid(jid, True)})
@@ -1353,21 +1484,22 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def renew_lease(self, server, node, new_expire, jid=None, return_function=None, stanza_id=None):
-		#contents = """<iq type='set'
-		#    from='""" + self.get_jid() + """'
-		#    to='""" + server + """'>
+	def renew_lease(self, server, node, new_expire, jid=None, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
+		#<iq type='set'
+		#    from='us'
+		#    to='them'>
 		#  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
-		#    <options node='""" + node_name + """' jid='""" + self.get_jid(jid, True) + """'>
+		#    <options node='node_name' jid='jid'>
 		#        <x xmlns='jabber:x:data' type='submit'>
 		#          <field var='FORM_TYPE' type='hidden'>
 		#            <value>http://jabber.org/protocol/pubsub#subscribe_options</value>
 		#          </field>
-		#          <field var='pubsub#expire'><value>""" + new_expire + """</value></field>
+		#          <field var='pubsub#expire'><value>new_expire</value></field>
 		#        </x>
 		#     </options>
 		#  </pubsub>
-		#</iq>"""
+		#</iq>
 		stanza = Element('iq', attrib={'type':'set', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		options = SubElement(pubsub, 'options', attrib={'node':str(node), 'jid':self.get_jid(jid, True)})
@@ -1384,8 +1516,8 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def keyword_filtered_subscription(self, server, node, subid, filters, jid=None, return_function=None, stanza_id=None):
-		## FIXME
+	def keyword_filtered_subscription(self, server, node, subid, filters, jid=None, return_function=None, stanza_id=None):		#FIXME A LOT
+		"""Not yet implemented sanely."""
 		#<iq type='set'
 		#    from='bard@shakespeare.lit/globe'
 		#    to='pubsub.shakespeare.lit'

@@ -181,7 +181,7 @@ Current spec at time of writing: 1.12 (2008-09-03)
 8.7.3.2. Get-Pending Not Supported:						NO HANDLER
 8.7.3.3. Insufficient Privileges:						NO HANDLER
 8.7.3.4. Node Does Not Exist:							NO HANDLER
-8.7.4. Per-Node Request:								NO HANDLER
+8.7.4. Per-Node Request:								NO HANDLER		(Bug in spec?)
 8.8. Manage Subscriptions:								NO HANDLER
 8.8.1. Retrieve Subscriptions List:						NO HANDLER
 8.8.1.1. Request:										NO HANDLER
