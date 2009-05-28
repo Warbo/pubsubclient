@@ -549,10 +549,10 @@ class PubSubClient(object):
 		If the optional argument specific is given as a list of item IDs
 		then those items are retrieved.
 
-		Replies are not yet handled."""
+		Replies are not yet handled.
 
 		If a number is supplied as the optional argument some then it is
-		used as an upper limit the the number of items retrieved.
+		used as an upper limit the the number of items retrieved."""
 		stanza = Element('iq', attrib={'type':'get', 'from':self.get_jid(), 'to':str(server)})
 		pubsub = SubElement(stanza, 'pubsub', attrib={'xmlns':'http://jabber.org/protocol/pubsub'})
 		items = SubElement(pubsub, 'items', attrib={'node':str(node)})
@@ -567,7 +567,7 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def request_all_items(self, server, node, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+	def request_all_items(self, server, node, return_function=None, stanza_id=None):
 		"""Retrieve all of the items published to node on server.
 
 		Replies are not yet handled."""
@@ -578,7 +578,7 @@ class PubSubClient(object):
 		#</iq>
 		self.request_items_generic(server, node, return_function=return_function, stanza_id)
 
-	def request_specific_items(self, server, node, items, jid=None, return_function=None, stanza_id=None):		# FIXME NO HANDLER
+	def request_specific_items(self, server, node, items, jid=None, return_function=None, stanza_id=None):
 		"""Retrieves certain items which have been published to node on
 		server. items is a list of item IDs.
 
@@ -592,7 +592,7 @@ class PubSubClient(object):
 		#</iq>
 		self.request_items_generic(server, node, specific=items, return_function=return_function, stanza_id)
 
-	def request_some_items(self, server, node, item_count, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+	def request_some_items(self, server, node, item_count, return_function=None, stanza_id=None):
 		"""Retrieves (at most) the last item_count items which have been
 		published to node at server.
 
@@ -604,7 +604,7 @@ class PubSubClient(object):
 		#</iq>
 		self.request_items_generic(server, node, some=item_count, return_function=return_function, stanza_id)
 
-	def publish(self, server, node, body, item_id=None, jid=None, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+	def publish(self, server, node, body, item_id=None, jid=None, return_function=None, stanza_id=None):
 		"""Publish body to the node node on server. If item_id is
 		specified then request that it be used as the item's ID.
 
@@ -707,7 +707,16 @@ class PubSubClient(object):
 		item = SubElement(retract, 'item', attrib={'id':item_id})
 
 		def handler(stanza, callback):
-			print etree.tostring(stanza)
+			#<iq type='result'
+			#    from='pubsub.shakespeare.lit'
+			#    to='hamlet@denmark.lit/elsinore'
+			#    id='retract1'/>
+			if callback is not None:
+				if stanza.get('type') == 'result':
+					result = True
+				else:
+					result = False
+				callback(result)
 
 		self.send(stanza, handler, return_function)
 
