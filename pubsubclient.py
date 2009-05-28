@@ -170,7 +170,7 @@ class PubSubClient(object):
 		self.callbacks[id] = [callback]
 		self.connection.send(etree.tostring(stanza))
 
-	def get_features(self, server, return_function=None, stanza_id=None):		#FIXME HANDLER USES XML!
+	def get_features(self, server, return_function=None, stanza_id=None):		#FIXME IDENTITY NOT HANDLED
 		"""Queries server (string or Server) for the XMPP features it
 		supports."""
 		# This is the kind of XML we want to send
@@ -187,7 +187,6 @@ class PubSubClient(object):
 		# stanza argument is the reply stanza which has been received
 		def handler(stanza, to_run):
 			## FIXME: This handles <feature> but not <identity>
-			## FIXME: DO NOT REPLY IN XML!
 			if to_run is not None:
 				# See if the server is not in our server_properties tree
 				reply = Element('reply', attrib={'id':stanza.get('id')})
@@ -196,9 +195,8 @@ class PubSubClient(object):
 					error = SubElement(reply, 'error')
 				# If this is a successful reply then handle it
 				elif stanza.attrib.get('type') == 'result':
-					result = SubElement(reply, 'result')
-					server = SubElement(result, 'server', attrib={'url':stanza.get('from')})
-					features = SubElement(server, 'features')
+					identities = []
+					features = []
 					for query in stanza.xpath(".//{http://jabber.org/protocol/disco#info}query"):
 						for identity in query.xpath("{http://jabber.org/protocol/disco#info}identity"):
 							# Handle identity children
@@ -207,7 +205,7 @@ class PubSubClient(object):
 						for feature in query.xpath("{http://jabber.org/protocol/disco#info}feature"):
 							# Handle feature children, adding features to
 							# the server's entry in server_properties
-							features.append(Element('feature', attrib={'var':feature.get('var')}))
+							features.append(feature.get('var'))
 					to_run(reply)
 
 		# Send the message and set the handler function above to deal with the reply
