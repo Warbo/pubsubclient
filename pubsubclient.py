@@ -419,7 +419,7 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def unsubscribe(self, server, node, jid=None, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+	def unsubscribe(self, server, node, jid=None, return_function=None, stanza_id=None):
 		"""Unsubscribe the given jid (or if not supplied, the currently
 		logged-in JID) from node on server.
 
@@ -438,7 +438,16 @@ class PubSubClient(object):
 		unsubscribe = SubElement(pubsub, 'unsubscribe', attrib={'node':str(node), 'jid':self.get_jid(jid, True)})
 
 		def handler(stanza, callback):
-			print etree.tostring(stanza)
+			#<iq type='result'
+			#    from='pubsub.shakespeare.lit'
+			#    to='francisco@denmark.lit/barracks'
+			#    id='unsub1'/>
+			if callback is not None:
+				if stanza.get('type') == 'result':
+					reply = True
+				else:
+					reply = False
+				callback(reply)
 
 		self.send(stanza, handler, return_function)
 
