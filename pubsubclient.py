@@ -688,10 +688,8 @@ class PubSubClient(object):
 		print "Sending"
 		self.send(stanza, handler, return_function)
 
-	def delete_an_item_from_a_node(self, server, node, item_id, jid=None, return_function=None, stanza_id=None):		#FIXME NO HANDLER
-		"""Removes the item with ID item_id from node at server.
-
-		Replies are not handled yet."""
+	def delete_an_item_from_a_node(self, server, node, item_id, jid=None, return_function=None, stanza_id=None):
+		"""Removes the item with ID item_id from node at server."""
 		#<iq type='set'
 		#    from='us'
 		#    to='them'>
@@ -770,7 +768,7 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def entity_request_instant_node(self, server, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+	def entity_request_instant_node(self, server, return_function=None, stanza_id=None):
 		"""Asks the given server for an instant node (ie. one without
 		a predetermined name/id)."""
 		#<iq type='set' from='us' to='them'>
@@ -781,7 +779,7 @@ class PubSubClient(object):
 		#</iq>
 		self.request_node(server, None, "leaf", None, None, return_function, stanza_id)
 
-	def get_new_leaf_node(self, server, node, parent, options, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+	def get_new_leaf_node(self, server, node, parent, options, return_function=None, stanza_id=None):
 		"""Requests a new leaf node (which can store items) with name
 		node, as a sub-node of the node parent on server.
 
@@ -796,7 +794,7 @@ class PubSubClient(object):
 		#</iq>
 		self.request_node(server, node, "leaf", parent, options, return_function, stanza_id)
 
-	def get_new_collection_node(self, server, node, parent, options, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+	def get_new_collection_node(self, server, node, parent, options, return_function=None, stanza_id=None):
 		"""Requests a new collection node (which can store nodes) with
 		name node, as a sub-node of the node parent on server.
 
@@ -1019,10 +1017,8 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def purge_all_items_from_a_node(self, server, node, return_function=None, stanza_id=None):		#FIXME NO HANDLER
-		"""Remove every item which has been published to node on server.
-
-		Replies are not yet handled."""
+	def purge_all_items_from_a_node(self, server, node, return_function=None, stanza_id=None):
+		"""Remove every item which has been published to node on server."""
 		#<iq type='set'
 		#    from='us'
 		#    to='them'>
@@ -1035,7 +1031,15 @@ class PubSubClient(object):
 		purge = SubElement(pubsub, 'purge', attrib={'node':str(node)})
 
 		def handler(stanza, callback):
-			print etree.tostring(stanza)
+			#<iq type='result'
+			#    from='pubsub.shakespeare.lit'
+			#    id='purge1'/>
+			if callback is not None:
+				if stanza.get('type') == 'result':
+					reply = True
+				else:
+					reply = False
+				callback(reply)
 
 		self.send(stanza, handler, return_function)
 
@@ -1055,6 +1059,23 @@ class PubSubClient(object):
 		command = SubElement(stanza, 'command', attrib={'xmlns':'http://jabber.org/protocol/commands', 'node':'http://jabber.org/protocol/pubsub#get-pending', 'action':'execute'})
 
 		def handler(stanza, callback):
+			#<iq type='result'
+			#    from='pubsub.shakespeare.lit'
+			#    to='hamlet@denmark.lit/elsinore'
+			#    id='pending1'>
+			#  <command xmlns='http://jabber.org/protocol/commands'
+			#           sessionid='pubsub-get-pending:20031021T150901Z-600'
+			#           node='http://jabber.org/protocol/pubsub#get-pending'
+			#           status='executing'
+			#           action='execute'>
+			#    <x xmlns='jabber:x:data' type='form'>
+			#      <field type='list-single' var='pubsub#node'>
+			#        <option><value>princely_musings</value></option>
+			#        <option><value>news_from_elsinore</value></option>
+			#      </field>
+			#    </x>
+			#  </command>
+			#</iq>
 			print etree.tostring(stanza)
 
 		self.send(stanza, handler, return_function)
@@ -1193,13 +1214,12 @@ class PubSubClient(object):
 
 		self.send(stanza, handler, return_function)
 
-	def modify_affiliation(self, server, node, affiliations, return_function=None, stanza_id=None):		#FIXME NO HANDLER
+	def modify_affiliation(self, server, node, affiliations, return_function=None, stanza_id=None):
 		"""Tells server to change the affiliation of some entities to
 		the node node. affiliations is a dictionary of the form:
 
 		{JID1:affiliation_type, JID2:affiliation_type, ...}
-
-		Replies are not yet handled."""
+		"""
 		#<iq type='set'
 		#    from='us'
 		#    to='them'>
@@ -1216,12 +1236,12 @@ class PubSubClient(object):
 			affiliations_element.append(Element('affiliation', attrib={'jid':str(current_affiliation), 'affiliation':affiliations[current_affiliation]}))
 
 		def handler(stanza, callback):
-			print etree.tostring(stanza)
 			if callback is not None:
 				if stanza.get("type") == "result":
-					callback(0)
+					reply = True
 				else:
-					callback("error")
+					reply = False
+				callback(reply)
 
 		self.send(stanza, handler, return_function)
 
@@ -1773,3 +1793,7 @@ class Item(object):
 		self.name = name
 		self.jid = jid
 		self.node = node
+
+class Form(object):
+	"""A form stores a list of fields, which can contain a list of
+	values. Each field and value is accessed with
